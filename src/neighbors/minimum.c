@@ -25,21 +25,12 @@
 #include "neighbors.h"
 
 
-static uint8_t VS_CC get_min_u8(uint8_t x, uint8_t y, uint8_t z)
+static unsigned VS_CC get_min(unsigned x, unsigned y, unsigned z)
 {
-    if (x < y) {
-        return x < z ? x : z;
+    if (y > x) {
+        return z > x ? x : z;
     }
-    return y < z ? y : z;
-}
-
-
-static uint16_t VS_CC get_min_u16(uint16_t x, uint16_t y, uint16_t z)
-{
-    if (x < y) {
-        return x < z ? x : z;
-    }
-    return y < z ? y : z;
+    return z > y ? y : z;
 }
 
 
@@ -47,14 +38,14 @@ static void VS_CC
 proc_min_tb_u8(const uint8_t *rt, const uint8_t *rb, int w, uint8_t *dstp)
 {
     uint8_t mint, minb;
-    mint = get_min_u8(rt[0], rt[1], rb[0]);
+    mint = get_min(rt[0], rt[1], rb[0]);
     dstp[0] = mint < rb[1] ? mint : rb[1];
     for (int x = 1; x < w; x++) {
-        mint = get_min_u8(rt[x - 1], rt[x], rt[x + 1]);
-        minb = get_min_u8(rb[x - 1], rb[x], rb[x + 1]);
+        mint = get_min(rt[x - 1], rt[x], rt[x + 1]);
+        minb = get_min(rb[x - 1], rb[x], rb[x + 1]);
         dstp[x] = mint < minb ? mint : minb;
     }
-    minb = get_min_u8(rt[w - 1], rt[w], rb[w - 1]);
+    minb = get_min(rt[w - 1], rt[w], rb[w - 1]);
     dstp[w] = minb < rb[w] ? minb : rb[w];
 }
 
@@ -63,14 +54,14 @@ static void VS_CC
 proc_min_tb_u16(const uint16_t *rt, const uint16_t *rb, int w, uint16_t *dstp)
 {
     uint16_t mint, minb;
-    mint = get_min_u16(rt[0], rt[1], rb[0]);
+    mint = get_min(rt[0], rt[1], rb[0]);
     dstp[0] = mint < rb[1] ? mint : rb[1];
     for (int x = 1; x < w; x++) {
-        mint = get_min_u16(rt[x - 1], rt[x], rt[x + 1]);
-        minb = get_min_u16(rb[x - 1], rb[x], rb[x + 1]);
+        mint = get_min(rt[x - 1], rt[x], rt[x + 1]);
+        minb = get_min(rb[x - 1], rb[x], rb[x + 1]);
         dstp[x] = mint < minb ? mint : minb;
     }
-    minb = get_min_u16(rt[w - 1], rt[w], rt[w - 1]);
+    minb = get_min(rt[w - 1], rt[w], rt[w - 1]);
     dstp[w] = minb < rb[w] ? minb : rb[w];
 }
 
@@ -94,17 +85,17 @@ proc_minimum_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
     dstp += stride;
 
     for (int y = 1; y < h; y++) {
-        uint8_t min0 = get_min_u8(r0[0], r1[0], r2[0]);
-        uint8_t min1 = get_min_u8(r0[1], r1[1], r2[1]);
+        uint8_t min0 = get_min(r0[0], r1[0], r2[0]);
+        uint8_t min1 = get_min(r0[1], r1[1], r2[1]);
         dstp[0] = min0 < min1 ? min0 : min1;
         for (int x = 1; x < w; x++) {
-            min0 = get_min_u8(r0[x - 1], r0[x], r0[x + 1]);
-            min1 = get_min_u8(r1[x - 1], r1[x], r1[x + 1]);
-            uint8_t min2 = get_min_u8(r2[x - 1], r2[x], r2[x + 1]);
-            dstp[x] = get_min_u8(min0, min1, min2);
+            min0 = get_min(r0[x - 1], r0[x], r0[x + 1]);
+            min1 = get_min(r1[x - 1], r1[x], r1[x + 1]);
+            uint8_t min2 = get_min(r2[x - 1], r2[x], r2[x + 1]);
+            dstp[x] = get_min(min0, min1, min2);
         }
-        min0 = get_min_u8(r0[w - 1], r1[w - 1], r2[w - 1]);
-        min1 = get_min_u8(r0[w], r1[w], r2[w]);
+        min0 = get_min(r0[w - 1], r1[w - 1], r2[w - 1]);
+        min1 = get_min(r0[w], r1[w], r2[w]);
         dstp[w] = min0 < min1 ? min0 : min1;
 
         r0 += stride;
@@ -136,17 +127,17 @@ proc_minimum_16bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
     dstp += stride;
 
     for (int y = 1; y < h; y++) {
-        uint16_t min0 = get_min_u16(r0[0], r1[0], r2[0]);
-        uint16_t min1 = get_min_u16(r0[1], r1[1], r2[1]);
+        uint16_t min0 = get_min(r0[0], r1[0], r2[0]);
+        uint16_t min1 = get_min(r0[1], r1[1], r2[1]);
         dstp[0] = min0 < min1 ? min0 : min1;
         for (int x = 1; x < w; x++) {
-            min0 = get_min_u16(r0[x - 1], r0[x], r0[x + 1]);
-            min1 = get_min_u16(r1[x - 1], r1[x], r1[x + 1]);
-            uint16_t min2 = get_min_u16(r2[x - 1], r2[x], r2[x + 1]);
-            dstp[x] = get_min_u16(min0, min1, min2);
+            min0 = get_min(r0[x - 1], r0[x], r0[x + 1]);
+            min1 = get_min(r1[x - 1], r1[x], r1[x + 1]);
+            uint16_t min2 = get_min(r2[x - 1], r2[x], r2[x + 1]);
+            dstp[x] = get_min(min0, min1, min2);
         }
-        min0 = get_min_u16(r0[w - 1], r1[w - 1], r2[w - 1]);
-        min1 = get_min_u16(r0[w], r1[w], r2[w]);
+        min0 = get_min(r0[w - 1], r1[w - 1], r2[w - 1]);
+        min1 = get_min(r0[w], r1[w], r2[w]);
         dstp[w] = min0 < min1 ? min0 : min1;
 
         r0 += stride;
