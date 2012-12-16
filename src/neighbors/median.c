@@ -223,7 +223,7 @@ proc_median_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
         dstp += stride;
     }
     
-    proc_median_line_u8(r0, r1, r2, dstp, w);
+    proc_median_line_u8(r0, r1, r1, dstp, w);
 }
 
 
@@ -253,7 +253,7 @@ proc_median_16bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
         dstp += stride;
     }
     
-    proc_median_line_u16(r0, r1, r2, dstp, w);
+    proc_median_line_u16(r0, r1, r1, dstp, w);
 }
 
 const proc_neighbors median[] = {
