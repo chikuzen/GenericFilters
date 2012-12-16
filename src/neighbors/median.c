@@ -84,33 +84,18 @@ static void VS_CC sort_array_u16(uint16_t *array)
 }
 
 
-static uint8_t VS_CC get_median_3_u8(uint8_t a, uint8_t b, uint8_t c)
+static uint8_t VS_CC get_median_3(unsigned x, unsigned y, unsigned z)
 {
-    if (a <= b) {
-        if (a >= c) {
-            return a;
+    if (y > x) {
+        if (x > z) {
+            return x;
         }
-        return b >= c ? c : b;
+        return y > z ? z : y;
     }
-    if (b >= c) {
-        return b;
+    if (y > z) {
+        return y;
     }
-    return a >= c ? c : a;
-}
-
-
-static uint16_t VS_CC get_median_3_u16(uint16_t a, uint16_t b, uint16_t c)
-{
-    if (a <= b) {
-        if (a >= c) {
-            return a;
-        }
-        return b >= c ? c : b;
-    }
-    if (b >= c) {
-        return b;
-    }
-    return a >= c ? c : a;
+    return x > z ? z : x;
 }
 
 
@@ -129,7 +114,7 @@ get_median_3x3_u8(uint8_t *array0, uint8_t *array1, uint8_t *array2)
     if (array0[1] > array1[1]) {
         swap_array_u8(&array0, &array1);
     }
-    return get_median_3_u8(array0[2], array1[1], array2[0]);
+    return get_median_3(array0[2], array1[1], array2[0]);
 }
 
 
@@ -148,7 +133,7 @@ get_median_3x3_u16(uint16_t *array0, uint16_t *array1, uint16_t *array2)
     if (array0[1] > array1[1]) {
         swap_array_u16(&array0, &array1);
     }
-    return get_median_3_u16(array0[2], array1[1], array2[0]);
+    return get_median_3(array0[2], array1[1], array2[0]);
 }
 
 static void VS_CC
