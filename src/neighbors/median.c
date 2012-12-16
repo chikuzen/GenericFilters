@@ -59,50 +59,6 @@ static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
 #undef HIGHLOW
 
 
-static void VS_CC 
-proc_median_3x3_u8(int left, int center, int right, const uint8_t *top,
-                   const uint8_t *mdl, const uint8_t *btm, uint8_t *dstp)
-{
-    dstp[center] = get_median_9(top[left], top[center], top[right],
-                                mdl[left], mdl[center], mdl[right],
-                                btm[left], btm[center], btm[right]);
-}
-
-
-static void VS_CC
-proc_median_3x3_u16(int left, int center, int right, const uint16_t *top,
-                    const uint16_t *mdl, const uint16_t *btm, uint16_t *dstp)
-{
-    dstp[center] = get_median_9(top[left], top[center], top[right],
-                                mdl[left], mdl[center], mdl[right],
-                                btm[left], btm[center], btm[right]);
-}
-
-
-static void VS_CC
-proc_median_line_u8(const uint8_t *r0, const uint8_t *r1, const uint8_t *r2,
-                      uint8_t *dstp, int w)
-{
-    proc_median_3x3_u8(0, 0, 1, r0, r1, r2, dstp);
-    for (int x = 0; x < w; x++) {
-        proc_median_3x3_u8(x - 1, x, x + 1, r0, r1, r2, dstp);
-    }
-    proc_median_3x3_u8(w - 1, w, w, r0, r1, r2, dstp);
-}
-
-
-static void VS_CC
-proc_median_line_u16(const uint16_t *r0, const uint16_t *r1, const uint16_t *r2,
-                       uint16_t *dstp, int w)
-{
-    proc_median_3x3_u16(0, 0, 1, r0, r1, r2, dstp);
-    for (int x = 0; x < w; x++) {
-        proc_median_3x3_u16(x - 1, x, x + 1, r0, r1, r2, dstp);
-    }
-    proc_median_3x3_u16(w - 1, w, w, r0, r1, r2, dstp);
-}
-
-
 static void VS_CC
 proc_median_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
                  VSFrameRef *dst)
@@ -110,26 +66,22 @@ proc_median_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
     int w = vsapi->getFrameWidth(src, plane) - 1;
     int h = vsapi->getFrameHeight(src, plane) - 1;
     int stride = vsapi->getStride(src, plane);
-    const uint8_t *r0 = vsapi->getReadPtr(src, plane);
-    const uint8_t *r1 = r0;
-    const uint8_t *r2 = r1 + stride;
-
+    const uint8_t *r1 = vsapi->getReadPtr(src, plane);
     uint8_t *dstp = vsapi->getWritePtr(dst, plane);
-    
-    proc_median_line_u8(r0, r1, r2, dstp, w);
-    r1 += stride;
-    r2 += stride;
-    dstp += stride;
 
-    for (int y = 1; y < h; y++) {
-        proc_median_line_u8(r0, r1, r2, dstp, w);
-        r0 += stride;
+    for (int y = 0; y <= h; y++) {
+        const uint8_t *r0 = r1 - stride * !!y;
+        const uint8_t *r2 = r1 + stride * !!(h -y);
+        for (int x = 0; x <= w; x++) {
+            int xl = x - !!x;
+            int xr = x + !!(w - x);
+            dstp[x] = get_median_9(*(r0 + xl), *(r0 + x), *(r0 + xr),
+                                   *(r1 + xl), *(r1 + x), *(r1 + xr),
+                                   *(r2 + xl), *(r2 + x), *(r2 + xr));
+        }
         r1 += stride;
-        r2 += stride;
         dstp += stride;
     }
-    
-    proc_median_line_u8(r0, r1, r1, dstp, w);
 }
 
 
@@ -140,27 +92,24 @@ proc_median_16bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
     int w = vsapi->getFrameWidth(src, plane) - 1;
     int h = vsapi->getFrameHeight(src, plane) - 1;
     int stride = vsapi->getStride(src, plane) / 2;
-    const uint16_t *r0 = (uint16_t *)vsapi->getReadPtr(src, plane);
-    const uint16_t *r1 = r0;
-    const uint16_t *r2 = r1 + stride;
-
+    const uint16_t *r1 = (uint16_t *)vsapi->getReadPtr(src, plane);
     uint16_t *dstp = (uint16_t *)vsapi->getWritePtr(dst, plane);
-    
-    proc_median_line_u16(r0, r1, r2, dstp, w);
-    r1 += stride;
-    r2 += stride;
-    dstp += stride;
 
-    for (int y = 1; y < h; y++) {
-        proc_median_line_u16(r0, r1, r2, dstp, w);
-        r0 += stride;
+    for (int y = 0; y <= h; y++) {
+        const uint16_t *r0 = r1 - stride * !!y;
+        const uint16_t *r2 = r1 + stride * !!(h -y);
+        for (int x = 0; x <= w; x++) {
+            int xl = x - !!x;
+            int xr = x + !!(w - x);
+            dstp[x] = get_median_9(*(r0 + xl), *(r0 + x), *(r0 + xr),
+                                   *(r1 + xl), *(r1 + x), *(r1 + xr),
+                                   *(r2 + xl), *(r2 + x), *(r2 + xr));
+        }
         r1 += stride;
-        r2 += stride;
         dstp += stride;
     }
-    
-    proc_median_line_u16(r0, r1, r1, dstp, w);
 }
+
 
 const proc_neighbors median[] = {
     proc_median_8bit,
