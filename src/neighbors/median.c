@@ -24,126 +24,48 @@
 #include <stdint.h>
 #include "neighbors.h"
 
-static void VS_CC swap_u8(uint8_t *x, uint8_t *y)
-{
-    uint8_t tmp = *x;
-    *x = *y;
-    *y = tmp;
+
+/* from 'Implementing Median Filters in XC4000E FPGAs' by John L. Smith */
+#define HIGHLOW(in0, in1, low, high) {\
+    low = in0; high = in1;\
+    if (in0 > in1) { low = in1; high = in0;}\
 }
-
-
-static void VS_CC swap_u16(uint16_t *x, uint16_t *y)
+static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
+                                   unsigned m3, unsigned m4, unsigned m5,
+                                   unsigned m6, unsigned m7, unsigned m8)
 {
-    uint16_t tmp = *x;
-    *x = *y;
-    *y = tmp;
+    unsigned  x0, x1, x2, x3, x4, x5, x6, x7, x8, x9,
+              x10, x11, x12, x13, x14, x15;
+    HIGHLOW( m1,  m2,  x0,  x1);
+    HIGHLOW( m4,  m5,  x2,  x3);
+    HIGHLOW( m7,  m8,  x4,  x5);
+    HIGHLOW( m0,  x0,  x6,  x7);
+    HIGHLOW( m3,  x2,  x8,  x9);
+    HIGHLOW( m6,  x4, x10, x11);
+    HIGHLOW( x7,  x1, x12, x13);
+    HIGHLOW( x9,  x3, x14, x15);
+    HIGHLOW(x11,  x5,  x0,  x1)
+    HIGHLOW(x14,  x0,  x2,  x3);
+    x4 = x6 >  x8 ?  x6 :  x8;
+    x5 = x4 > x10 ?  x4 : x10;
+    x6 = x2 > x12 ?  x2 : x12;
+    x7 = x3 >  x6 ?  x3 :  x6;
+    x8 = x1 > x15 ? x15 :  x1;
+    x9 = x8 > x13 ? x13 :  x8;
+    HIGHLOW( x7,  x9,  x0,  x1);
+    x2 = x0 > x5 ? x0 : x5;
+    return x1 > x2 ? x2 : x1;
 }
+#undef HIGHLOW
 
 
-static void VS_CC swap_array_u8(uint8_t **x, uint8_t **y)
-{
-    uint8_t *tmp = *x;
-    *x = *y;
-    *y = tmp;
-}
-
-
-static void VS_CC swap_array_u16(uint16_t **x, uint16_t **y)
-{
-    uint16_t *tmp = *x;
-    *x = *y;
-    *y = tmp;
-}
-
-
-static void VS_CC sort_array_u8(uint8_t *array)
-{
-    if (array[0] > array[1]) {
-        swap_u8(array, array + 1);
-    }
-    if (array[1] > array[2]) {
-        swap_u8(array + 1, array + 2);
-    }
-    if (array[0] > array[1]) {
-        swap_u8(array, array + 1);
-    }
-}
-
-
-static void VS_CC sort_array_u16(uint16_t *array)
-{
-    if (array[0] > array[1]) {
-        swap_u16(array, array + 1);
-    }
-    if (array[1] > array[2]) {
-        swap_u16(array + 1, array + 2);
-    }
-    if (array[0] > array[1]) {
-        swap_u16(array, array + 1);
-    }
-}
-
-
-static uint8_t VS_CC get_median_3(unsigned x, unsigned y, unsigned z)
-{
-    if (y > x) {
-        if (x > z) {
-            return x;
-        }
-        return y > z ? z : y;
-    }
-    if (y > z) {
-        return y;
-    }
-    return x > z ? z : x;
-}
-
-
-static uint8_t VS_CC
-get_median_3x3_u8(uint8_t *array0, uint8_t *array1, uint8_t *array2)
-{
-    sort_array_u8(array0);
-    sort_array_u8(array1);
-    sort_array_u8(array2);
-    if (array0[1] > array1[1]) {
-        swap_array_u8(&array0, &array1);
-    }
-    if (array1[1] > array2[1]) {
-        swap_array_u8(&array1, &array2);
-    }
-    if (array0[1] > array1[1]) {
-        swap_array_u8(&array0, &array1);
-    }
-    return get_median_3(array0[2], array1[1], array2[0]);
-}
-
-
-static uint16_t VS_CC
-get_median_3x3_u16(uint16_t *array0, uint16_t *array1, uint16_t *array2)
-{
-    sort_array_u16(array0);
-    sort_array_u16(array1);
-    sort_array_u16(array2);
-    if (array0[1] > array1[1]) {
-        swap_array_u16(&array0, &array1);
-    }
-    if (array1[1] > array2[1]) {
-        swap_array_u16(&array1, &array2);
-    }
-    if (array0[1] > array1[1]) {
-        swap_array_u16(&array0, &array1);
-    }
-    return get_median_3(array0[2], array1[1], array2[0]);
-}
-
-static void VS_CC
+static void VS_CC 
 proc_median_3x3_u8(int left, int center, int right, const uint8_t *top,
                    const uint8_t *mdl, const uint8_t *btm, uint8_t *dstp)
 {
-    uint8_t a0[] = {top[left], top[center], top[right]};
-    uint8_t a1[] = {mdl[left], mdl[center], mdl[right]};
-    uint8_t a2[] = {btm[left], btm[center], btm[right]};
-    dstp[center] = get_median_3x3_u8(a0, a1, a2);
+    dstp[center] = get_median_9(top[left], top[center], top[right],
+                                mdl[left], mdl[center], mdl[right],
+                                btm[left], btm[center], btm[right]);
 }
 
 
@@ -151,10 +73,9 @@ static void VS_CC
 proc_median_3x3_u16(int left, int center, int right, const uint16_t *top,
                     const uint16_t *mdl, const uint16_t *btm, uint16_t *dstp)
 {
-    uint16_t a0[] = {top[left], top[center], top[right]};
-    uint16_t a1[] = {mdl[left], mdl[center], mdl[right]};
-    uint16_t a2[] = {btm[left], btm[center], btm[right]};
-    dstp[center] = get_median_3x3_u16(a0, a1, a2);
+    dstp[center] = get_median_9(top[left], top[center], top[right],
+                                mdl[left], mdl[center], mdl[right],
+                                btm[left], btm[center], btm[right]);
 }
 
 
