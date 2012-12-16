@@ -131,6 +131,7 @@ proc_5_16bit(convolution_t *ch, int plane, const VSFrameRef *src,
     if (w < 3) {
         return;
     }
+    int w_ = w - 1;
     int h = vsapi->getFrameHeight(src, plane);
     int stride = vsapi->getStride(src, plane) / 2;
     double div = ch->div;
