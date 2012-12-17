@@ -50,6 +50,9 @@ extern const proc_convolution convo_v3[];
 extern const proc_convolution convo_v5[];
 extern const proc_convolution convo_3x3[];
 extern const proc_convolution convo_5x5[];
+extern const proc_convolution convo_hv3[];
+extern const proc_convolution convo_hv5[];
+
 
 #ifdef PROC_CONVOLUTION
 static inline uint16_t VS_CC clamp(double val, uint16_t max)

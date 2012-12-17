@@ -118,7 +118,7 @@ static void VS_CC
 create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
                const VSAPI *vsapi)
 {
-    char msg_buff[256] = "convolution: ";
+    char msg_buff[256] = "Convolution: ";
     char *msg = msg_buff + strlen(msg_buff);
     int err;
 
@@ -140,8 +140,8 @@ create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     }
 
     num = vsapi->propNumElements(in, "matrix");
-    RET_IF_ERROR(num > 0 && num != 3 && num != 5 && num != 9 && num != 25,
-                 "invalid matrix");
+    RET_IF_ERROR(num > 0 && num != 3 && num != 5 && num != 6 && num != 9 &&
+                 num != 10 && num != 25, "invalid matrix");
     switch (num) {
     case 3:
     case 5:
@@ -150,6 +150,12 @@ create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
         if (!err && mode[0] == 'v') {
             ch->proc_function = num == 3 ? convo_v3 : convo_v5;
         }
+        break;
+    case 6:
+        ch->proc_function = convo_hv3;
+        break;
+    case 10:
+        ch->proc_function = convo_hv5;
         break;
     case 25:
         ch->proc_function = convo_5x5;
