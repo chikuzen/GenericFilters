@@ -1,28 +1,37 @@
 include config.mak
 
+vpath %.c $(SRCDIR)
+vpath %.h $(SRCDIR)
+
 SRCS = convolution/convolution.c convolution/proc_3x3.c convolution/proc_5x5.c \
-       convolution/proc_h.c convolution/proc_v.c neighbors/maximum.c \
-       neighbors/median.c neighbors/minimum.c neighbors/neighbors.c \
+       convolution/proc_h.c      convolution/proc_v.c   neighbors/maximum.c \
+       neighbors/median.c        neighbors/minimum.c    neighbors/neighbors.c \
        vapoursynth.c
 
 OBJS = $(SRCS:%.c=%.o)
 
-.PHONY: all clean distclean
+.PHONY: all install clean distclean dep
 
 all: $(LIBNAME)
 
 $(LIBNAME): $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $^
-	$(if $(STRIP), $(STRIP) -x $@)
+	$(LD) -o $@ $(LDFLAGS) $^
+	-@ $(if $(STRIP), $(STRIP) $@)
 
 %.o: %.c .depend
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+install: all
+	install -d $(libdir)
+	install -m 755 $(LIBNAME) $(libdir)
+
 clean:
-	$(RM) $(OBJS) *.dll *.so .depend
+	$(RM) $(OBJS) *.dll *.so *.dylib .depend
 
 distclean: clean
-	$(RM) config.mak
+	$(RM) config.*
+
+dep: .depend
 
 ifneq ($(wildcard .depend),)
 include .depend
@@ -30,7 +39,7 @@ endif
 
 .depend: config.mak
 	@$(RM) .depend
-	@$(foreach SRC, $(SRCS), $(CC) $(SRC) $(CFLAGS) -g0 -MT $(SRC:%.c=%.o) -MM >> .depend;)
+	@$(foreach SRC, $(SRCS:%=$(SRCDIR)/%), $(CC) $(SRC) $(CFLAGS) -MT $(SRC:$(SRCDIR)/%.c=%.o) -MM >> .depend;)
 
 config.mak:
 	./configure

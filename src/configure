@@ -7,7 +7,10 @@ Usage: ./configure [options]
 options:
   -h, --help               print this message
 
-  --cc=CC                  use a defined compiler for compilation and linking [gcc]
+  --install=PATH           set dir for install library
+                           [/usr/local/lib/vapoursynth]
+  --cc=CC                  use a defined compiler for compilation and linking
+                           [gcc]
   --target-os=OS           build programs to run on OS [auto]
   --cross-prefix=PREFIX    use PREFIX for compilation tools [none]
   --sysroot=DIR            specify toolchain's directory [none]
@@ -26,22 +29,37 @@ error_exit()
     exit 1
 }
 
+log_echo()
+{
+    echo $1
+    echo >> config.log
+    echo ---------------------------------- >> config.log
+    echo $1 >> config.log
+}
+
 cc_check()
 {
     echo 'int main(void){return 0;}' > conftest.c
+    echo "$CC conftest.c $1 $2 -o conftest" >> config.log
     $CC conftest.c $1 $2 -o conftest 2> /dev/null
     ret=$?
+    echo $ret >> config.log
     rm -f conftest*
     return $ret
 }
 
-rm -f config.mak conftest* .depend
-
+rm -f config.* conftest* .depend
+SRCDIR="$(cd $(dirname $0); pwd)"
+test "$SRCDIR" = "$(pwd)" && SRCDIR=.
+test -n "$(echo $SRCDIR | grep ' ')" && \
+    error_exit "out-of-tree builds are impossible with whitespace in source path"
 
 echo
 echo generating config.mak ...
 echo
 
+echo 
+libdir="/usr/local/lib/vapoursynth"
 TARGET_OS=""
 CROSS=""
 SYSROOT=""
@@ -50,8 +68,11 @@ LD="gcc"
 STRIP="strip"
 DEBUG=""
 LIBNAME=""
-CFLAGS="-Wshadow -Wall -std=gnu99 -I. -Iconvolution -Ineighbors"
-LDFLAGS="-L. -Lconvolution -Lneighbors"
+CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/convolution -I$SRCDIR/neighbors"
+LDFLAGS="-shared"
+
+echo all command lines: > config.log
+echo "$*" >> config.log
 
 for opt; do
     optarg="${opt#*=}"
@@ -88,6 +109,7 @@ done
 CC="${CROSS}${CC}"
 LD="${CROSS}${LD}"
 STRIP="${CROSS}${STRIP}"
+test -n "$DEBUG" && STRIP=""
 for f in "$CC" "$LD" "$STRIP"; do
     test -n "$(which $f 2> /dev/null)" || error_exit "$f is not executable"
 done
@@ -98,28 +120,35 @@ else
     TARGET_OS=$($CC -dumpmachine | tr '[A-Z]' '[a-z]')
 fi
 case "$TARGET_OS" in
-    *mingw* | *cygwin*)
+    *mingw*)
         LIBNAME="neighbors.dll"
-        LDFLAGS="-shared -Wl,--dll,--add-stdcall-alias $LDFLAGS"
+        LDFLAGS="$LDFLAGS -Wl,--dll,--add-stdcall-alias"
         ;;
     *linux*)
         LIBNAME="libneighbors.so"
         CFLAGS="$CFLAGS -fPIC"
-        LDFLAGS="-shared -fPIC $LDFLAGS"
+        LDFLAGS="-fPIC $LDFLAGS"
+        ;;
+    *darwin*)
+        LIBNAME="libneighbors.dylib"
+        test -n "$STRIP" && STRIP="$STRIP -x"
+        LDFLAGS="$LDFLAGS -dynamiclib -Wl,-undefined,suppress -Wl,-read_only_relocs,suppress -Wl,-flat_namespace"
+        echo "The autor has no Mac environment. Thus, this script has not tested. May the force be with you."
         ;;
     *)
-        error_exit "patches welcome"
+        error_exit "target is unsupported system."
         ;;
 esac
+
+log_echo "CFLAGS/LDFLAGS checking..."
 
 CFLAGS="$CFLAGS $XCFLAGS"
 LDFLAGS="$LDFLAGS $XLDFLAGS"
 
 if test -n "$DEBUG"; then
     CFLAGS="$CFLAGS -g3 -O0"
-    STRIP=""
 else
-    CFLAGS="-Os -g0 -ffast-math -fomit-frame-pointer $CFLAGS"
+    CFLAGS="-Os -g0 -ffast-math -fomit-frame-pointer -fno-zero-initialized-in-bss $CFLAGS"
 fi
 
 if ! cc_check "$CFLAGS" "$LDFLAGS"; then
@@ -135,13 +164,25 @@ if cc_check "$CFLAGS -fexcess-precision=fast" "$LDFLAGS"; then
 fi
 
 cat >> config.mak << EOF
+SRCDIR = $SRCDIR
 CC = $CC
 LD = $LD
 STRIP = $STRIP
 LIBNAME = $LIBNAME
 CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
+libdir = $libdir
 EOF
+
+cat >> config.log << EOF
+---------------------------------
+    setting
+---------------------------------
+EOF
+cat config.mak >> config.log
+
+test "$SRCDIR" = "." || ln -sf $SRCDIR/GNUmakefile .
+mkdir -p neighbors convolution
 
 echo configure finished
 exit 0
