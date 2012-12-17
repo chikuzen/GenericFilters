@@ -44,11 +44,11 @@ proc_3_8bit(convolution_t *ch, int plane, const VSFrameRef *src,
         const uint8_t *r0 = r1 - !!y * stride;
         const uint8_t *r2 = r1 + !!(h - y) * stride;
         for (int x = 0; x < w; x++) {
-            int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2;
-            dstp[x] = (uint8_t)clamp(value / div + bias, max);
+            int64_t value = r0[x] * m0 + r1[x] * m1 + r2[x] * m2;
+            dstp[x] = clamp(value / div + bias, max);
         }
-        r1 += stride;
         dstp += stride;
+        r1 += stride;
     }
 }
 
@@ -69,14 +69,14 @@ proc_3_16bit(convolution_t *ch, int plane, const VSFrameRef *src,
     const uint16_t *r1 = (uint16_t *)vsapi->getReadPtr(src, plane);
 
     for (int y = 0; y <= h; y++) {
-        const uint16_t *r0 = r1 - !!y * stride;
+        const uint16_t *r0 = r1 - !!(h - y) * stride;
         const uint16_t *r2 = r1 + !!(h - y) * stride;
         for (int x = 0; x < w; x++) {
             int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2;
             dstp[x] = clamp(value / div + bias, max);
         }
-        r1 += stride;
         dstp += stride;
+        r1 += stride;
     }
 }
 
@@ -95,21 +95,22 @@ proc_5_8bit(convolution_t *ch, int plane, const VSFrameRef *src,
 
     uint8_t *dstp = vsapi->getWritePtr(dst, plane);
     const uint8_t *r2 = vsapi->getReadPtr(src, plane);
+    const uint8_t *r1 = r2;
+    const uint8_t *r0 = r1;
+    const uint8_t *r3 = r2 + stride;
 
     for (int y = 0; y <= h; y++) {
-        int offy_t = !y;
-        int offy_b = !(h - y);
-        const uint8_t *r1 = r2 - !offy_t * stride;
-        const uint8_t *r0 = r1 + (offy_t - !!(y - 1)) * stride;
-        const uint8_t *r3 = r2 + !offy_b * stride;
-        const uint8_t *r4 = r3 + (!!(h - y - 1) - offy_b) * stride;
+        const uint8_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
         for (int x = 0; x < w; x++) {
             int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2 +
                             *(r3 + x) * m3 + *(r4 + x) * m4;
-            dstp[x] = (uint8_t)clamp(value / div + bias, max);
+            dstp[x] = clamp(value / div + bias, max);
         }
-        r2 += stride;
         dstp += stride;
+        r0 = r1;
+        r1 = r2;
+        r2 = r3;
+        r3 = r4;
     }
 }
 
@@ -127,22 +128,23 @@ proc_5_16bit(convolution_t *ch, int plane, const VSFrameRef *src,
     double bias = ch->bias;
 
     uint16_t *dstp = (uint16_t *)vsapi->getWritePtr(dst, plane);
-    const uint16_t *r2 = (uint16_t *)vsapi->getReadPtr(src, plane);
+    const uint16_t *r0 = (uint16_t *)vsapi->getReadPtr(src, plane);
+    const uint16_t *r1 = r0;
+    const uint16_t *r2 = r1;
+    const uint16_t *r3 = r2 + stride;
 
     for (int y = 0; y <= h; y++) {
-        int offy_t = !y;
-        int offy_b = !(h - y);
-        const uint16_t *r1 = r2 - !offy_t * stride;
-        const uint16_t *r0 = r1 + (offy_t - !!(y - 1)) * stride;
-        const uint16_t *r3 = r2 + !offy_b * stride;
-        const uint16_t *r4 = r3 + (!!(h - y - 1) - offy_b) * stride;
+        const uint16_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
         for (int x = 0; x < w; x++) {
             int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2 +
                             *(r3 + x) * m3 + *(r4 + x) * m4;
             dstp[x] = clamp(value / div + bias, max);
         }
-        r2 += stride;
         dstp += stride;
+        r0 = r1;
+        r1 = r2;
+        r2 = r3;
+        r3 = r4;
     }
 }
 
