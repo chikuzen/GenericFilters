@@ -39,7 +39,9 @@ struct convolution_handle {
     int planes[3];
     const proc_convolution *proc_function;
     int m[25];
+    int m_v[5];
     double div;
+    double div_v;
     double bias;
 };
 
