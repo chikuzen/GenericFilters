@@ -24,17 +24,25 @@
 #define PROC_CONVOLUTION
 #include "convolution.h"
 
+#define SET_MATRIX() \
+    int m00 = ch->m[ 0], m01 = ch->m[ 1], m02 = ch->m[ 2], m03 = ch->m[ 3], m04 = ch->m[ 4],\
+        m10 = ch->m[ 5], m11 = ch->m[ 6], m12 = ch->m[ 7], m13 = ch->m[ 8], m14 = ch->m[ 9],\
+        m20 = ch->m[10], m21 = ch->m[11], m22 = ch->m[12], m23 = ch->m[13], m24 = ch->m[14],\
+        m30 = ch->m[15], m31 = ch->m[16], m32 = ch->m[17], m33 = ch->m[18], m34 = ch->m[19],\
+        m40 = ch->m[20], m41 = ch->m[21], m42 = ch->m[22], m43 = ch->m[23], m44 = ch->m[24];
+
+#define GET_CONVOLUTION(i0, i1, i2, i3, i4) \
+    (r0[i0] * m00 + r0[i1] * m01 + r0[i2] * m02 + r0[i3] * m03 + r0[i4] * m04 +\
+     r1[i0] * m10 + r1[i1] * m11 + r1[i2] * m12 + r1[i3] * m13 + r1[i4] * m14 +\
+     r2[i0] * m20 + r2[i1] * m21 + r2[i2] * m22 + r2[i3] * m23 + r2[i4] * m24 +\
+     r3[i0] * m30 + r3[i1] * m31 + r3[i2] * m32 + r3[i3] * m33 + r3[i4] * m34 +\
+     r4[i0] * m40 + r4[i1] * m41 + r4[i2] * m42 + r4[i3] * m43 + r4[i4] * m44)
 
 static void VS_CC
 proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
           const VSAPI *vsapi, uint16_t max)
 {
-    int m00 = ch->m[ 0], m01 = ch->m[ 1], m02 = ch->m[ 2], m03 = ch->m[ 3], m04 = ch->m[ 4],
-        m10 = ch->m[ 5], m11 = ch->m[ 6], m12 = ch->m[ 7], m13 = ch->m[ 8], m14 = ch->m[ 9],
-        m20 = ch->m[10], m21 = ch->m[11], m22 = ch->m[12], m23 = ch->m[13], m24 = ch->m[14],
-        m30 = ch->m[15], m31 = ch->m[16], m32 = ch->m[17], m33 = ch->m[18], m34 = ch->m[19],
-        m40 = ch->m[20], m41 = ch->m[21], m42 = ch->m[22], m43 = ch->m[23], m44 = ch->m[24];
-
+    SET_MATRIX();
     int w = vsapi->getFrameWidth(src, plane) - 1;
     int h = vsapi->getFrameHeight(src, plane) - 1;
     if (w < 3 || h < 3) {
@@ -53,38 +61,18 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
     for (int y = 0; y <= h; y++) {
         const uint8_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
-        int64_t value = r0[0] * m00 + r0[0] * m01 + r0[0] * m02 + r0[1] * m03 + r0[2] * m04 +
-                        r1[0] * m10 + r1[0] * m11 + r1[0] * m12 + r1[1] * m13 + r1[2] * m14 +
-                        r2[0] * m20 + r2[0] * m21 + r2[0] * m22 + r2[1] * m23 + r2[2] * m24 +
-                        r3[0] * m30 + r3[0] * m31 + r3[0] * m32 + r3[1] * m33 + r3[2] * m34 +
-                        r4[0] * m40 + r4[0] * m41 + r4[0] * m42 + r4[1] * m43 + r4[2] * m44;
-        dstp[0] = clamp(value / div + bias, 0xFF);
-        value = r0[0] * m00 + r0[0] * m01 + r0[1] * m02 + r0[2] * m03 + r0[3] * m04 +
-                r1[0] * m10 + r1[0] * m11 + r1[1] * m12 + r1[2] * m13 + r1[3] * m14 +
-                r2[0] * m20 + r2[0] * m21 + r2[1] * m22 + r2[2] * m23 + r2[3] * m24 +
-                r3[0] * m30 + r3[0] * m31 + r3[1] * m32 + r3[2] * m33 + r3[3] * m34 +
-                r4[0] * m40 + r4[0] * m41 + r4[1] * m42 + r4[2] * m43 + r4[3] * m44;
+        int value = GET_CONVOLUTION(0, 0, 0, 1, 2);
+        dstp[0] = clamp( value / div + bias, 0xFF);
+        value = GET_CONVOLUTION(0, 0, 1, 2, 3);
         dstp[1] = clamp(value / div + bias, 0XFF);
         for (int x = 0; x <= w; x++) {
-            value = r0[x - 2] * m00 + r0[x - 1] * m01 + r0[x] * m02 + r0[x + 1] * m03 + r0[x + 2] * m04 +
-                    r1[x - 2] * m10 + r1[x - 1] * m11 + r1[x] * m12 + r1[x + 1] * m13 + r1[x + 2] * m14 +
-                    r2[x - 2] * m20 + r2[x - 1] * m21 + r2[x] * m22 + r2[x + 1] * m23 + r2[x + 2] * m24 +
-                    r3[x - 2] * m30 + r3[x - 1] * m31 + r3[x] * m32 + r3[x + 1] * m33 + r3[x + 2] * m34 +
-                    r4[x - 2] * m40 + r4[x - 1] * m41 + r4[x] * m42 + r4[x + 1] * m43 + r4[x + 2] * m44;
+            value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
             dstp[x] = clamp(value / div + bias, 0xFF);
         }
-        value = r0[w_ - 2] * m00 + r0[w_ - 1] * m01 + r0[w_] * m02 + r0[w] * m03 + r0[w] * m04 +
-                r1[w_ - 2] * m10 + r1[w_ - 1] * m11 + r1[w_] * m12 + r1[w] * m13 + r1[w] * m14 +
-                r2[w_ - 2] * m20 + r2[w_ - 1] * m21 + r2[w_] * m22 + r2[w] * m23 + r2[w] * m24 +
-                r3[w_ - 2] * m30 + r3[w_ - 1] * m31 + r3[w_] * m32 + r3[w] * m33 + r3[w] * m34 +
-                r4[w_ - 2] * m40 + r4[w_ - 1] * m41 + r4[w_] * m42 + r4[w] * m43 + r4[w] * m44;
-        dstp[0] = clamp(value / div + bias, 0xFF);
-        value = r0[w_ - 1] * m00 + r0[w_] * m01 + r0[w] * m02 + r0[w] * m03 + r0[w] * m04 +
-                r1[w_ - 1] * m10 + r1[w_] * m11 + r1[w] * m12 + r1[w] * m13 + r1[w] * m14 +
-                r2[w_ - 1] * m20 + r2[w_] * m21 + r2[w] * m22 + r2[w] * m23 + r2[w] * m24 +
-                r3[w_ - 1] * m30 + r3[w_] * m31 + r3[w] * m32 + r3[w] * m33 + r3[w] * m34 +
-                r4[w_ - 1] * m40 + r4[w_] * m41 + r4[w] * m42 + r4[w] * m43 + r4[w] * m44;
-        dstp[1] = clamp(value / div + bias, 0XFF);
+        value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
+        dstp[w_] = clamp(value / div + bias, 0xFF);
+        value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
+        dstp[w] = clamp(value / div + bias, 0XFF);
         dstp += stride;
         r0 = r1;
         r1 = r2;
@@ -98,11 +86,7 @@ static void VS_CC
 proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
            const VSAPI *vsapi, uint16_t max)
 {
-    int m00 = ch->m[ 0], m01 = ch->m[ 1], m02 = ch->m[ 2], m03 = ch->m[ 3], m04 = ch->m[ 4],
-        m10 = ch->m[ 5], m11 = ch->m[ 6], m12 = ch->m[ 7], m13 = ch->m[ 8], m14 = ch->m[ 9],
-        m20 = ch->m[10], m21 = ch->m[11], m22 = ch->m[12], m23 = ch->m[13], m24 = ch->m[14],
-        m30 = ch->m[15], m31 = ch->m[16], m32 = ch->m[17], m33 = ch->m[18], m34 = ch->m[19],
-        m40 = ch->m[20], m41 = ch->m[21], m42 = ch->m[22], m43 = ch->m[23], m44 = ch->m[24];
+    SET_MATRIX();
 
     int w = vsapi->getFrameWidth(src, plane) - 1;
     int h = vsapi->getFrameHeight(src, plane) - 1;
@@ -122,38 +106,18 @@ proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
     for (int y = 0; y <= h; y++) {
         const uint16_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
-        int64_t value = r0[0] * m00 + r0[0] * m01 + r0[0] * m02 + r0[1] * m03 + r0[2] * m04 +
-                        r1[0] * m10 + r1[0] * m11 + r1[0] * m12 + r1[1] * m13 + r1[2] * m14 +
-                        r2[0] * m20 + r2[0] * m21 + r2[0] * m22 + r2[1] * m23 + r2[2] * m24 +
-                        r3[0] * m30 + r3[0] * m31 + r3[0] * m32 + r3[1] * m33 + r3[2] * m34 +
-                        r4[0] * m40 + r4[0] * m41 + r4[0] * m42 + r4[1] * m43 + r4[2] * m44;
-        dstp[0] = clamp(value / div + bias, max);
-        value = r0[0] * m00 + r0[0] * m01 + r0[1] * m02 + r0[2] * m03 + r0[3] * m04 +
-                r1[0] * m10 + r1[0] * m11 + r1[1] * m12 + r1[2] * m13 + r1[3] * m14 +
-                r2[0] * m20 + r2[0] * m21 + r2[1] * m22 + r2[2] * m23 + r2[3] * m24 +
-                r3[0] * m30 + r3[0] * m31 + r3[1] * m32 + r3[2] * m33 + r3[3] * m34 +
-                r4[0] * m40 + r4[0] * m41 + r4[1] * m42 + r4[2] * m43 + r4[3] * m44;
-        dstp[1] = clamp(value / div + bias, max);
+        int value = GET_CONVOLUTION(0, 0, 0, 1, 2);
+        dstp[0] = clamp( value / div + bias, 0xFF);
+        value = GET_CONVOLUTION(0, 0, 1, 2, 3);
+        dstp[1] = clamp(value / div + bias, 0XFF);
         for (int x = 0; x <= w; x++) {
-            value = r0[x - 2] * m00 + r0[x - 1] * m01 + r0[x] * m02 + r0[x + 1] * m03 + r0[x + 2] * m04 +
-                    r1[x - 2] * m10 + r1[x - 1] * m11 + r1[x] * m12 + r1[x + 1] * m13 + r1[x + 2] * m14 +
-                    r2[x - 2] * m20 + r2[x - 1] * m21 + r2[x] * m22 + r2[x + 1] * m23 + r2[x + 2] * m24 +
-                    r3[x - 2] * m30 + r3[x - 1] * m31 + r3[x] * m32 + r3[x + 1] * m33 + r3[x + 2] * m34 +
-                    r4[x - 2] * m40 + r4[x - 1] * m41 + r4[x] * m42 + r4[x + 1] * m43 + r4[x + 2] * m44;
-            dstp[x] = clamp(value / div + bias, max);
+            value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
+            dstp[x] = clamp(value / div + bias, 0xFF);
         }
-        value = r0[w_ - 2] * m00 + r0[w_ - 1] * m01 + r0[w_] * m02 + r0[w] * m03 + r0[w] * m04 +
-                r1[w_ - 2] * m10 + r1[w_ - 1] * m11 + r1[w_] * m12 + r1[w] * m13 + r1[w] * m14 +
-                r2[w_ - 2] * m20 + r2[w_ - 1] * m21 + r2[w_] * m22 + r2[w] * m23 + r2[w] * m24 +
-                r3[w_ - 2] * m30 + r3[w_ - 1] * m31 + r3[w_] * m32 + r3[w] * m33 + r3[w] * m34 +
-                r4[w_ - 2] * m40 + r4[w_ - 1] * m41 + r4[w_] * m42 + r4[w] * m43 + r4[w] * m44;
-        dstp[0] = clamp(value / div + bias, max);
-        value = r0[w_ - 1] * m00 + r0[w_] * m01 + r0[w] * m02 + r0[w] * m03 + r0[w] * m04 +
-                r1[w_ - 1] * m10 + r1[w_] * m11 + r1[w] * m12 + r1[w] * m13 + r1[w] * m14 +
-                r2[w_ - 1] * m20 + r2[w_] * m21 + r2[w] * m22 + r2[w] * m23 + r2[w] * m24 +
-                r3[w_ - 1] * m30 + r3[w_] * m31 + r3[w] * m32 + r3[w] * m33 + r3[w] * m34 +
-                r4[w_ - 1] * m40 + r4[w_] * m41 + r4[w] * m42 + r4[w] * m43 + r4[w] * m44;
-        dstp[1] = clamp(value / div + bias, max);
+        value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
+        dstp[w_] = clamp(value / div + bias, 0xFF);
+        value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
+        dstp[w] = clamp(value / div + bias, 0XFF);
         dstp += stride;
         r0 = r1;
         r1 = r2;
