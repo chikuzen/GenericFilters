@@ -31,6 +31,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable:4996)
+#define snprintf _snprintf
 #endif
 
 
@@ -109,11 +110,11 @@ close_neighbors(void *instance_data, VSCore *core, const VSAPI *vsapi)
 }
 
 
-#define RET_IF_ERROR(cond, message) \
+#define RET_IF_ERROR(cond, ...) \
 {\
     if (cond) {\
         close_neighbors(nh, core, vsapi);\
-        strcat(msg_buff, message);\
+        snprintf(msg, 240, __VA_ARGS__);\
         vsapi->setError(out, msg_buff);\
         return;\
     }\
@@ -123,26 +124,24 @@ static void VS_CC
 create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
                  const VSAPI *vsapi)
 {
+    const char *filter_name = (char *)user_data;
     char msg_buff[256] = {0};
-    neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
-    RET_IF_ERROR(!nh, "neighbors: failed to allocate handler");
+    snprintf(msg_buff, "%s: ", filter_name);
+    char *msg = msg_buff + strlen(filter_name);
 
-    const char *proc = (const char *)user_data;
-    const char *name;
-    switch (proc[0]) {
-    case '0':
+    neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
+    RET_IF_ERROR(!nh, "failed to allocate handler");
+
+    switch (filter_name[1]) {
+    case 'i':
         nh->proc_function = minimum;
-        name = "Minimum";
         break;
-    case '1':
+    case 'a':
         nh->proc_function = maximum;
-        name = "Maximum";
         break;
     default:
         nh->proc_function = median;
-        name = "Median";
     }
-    strcat(msg_buff, name);
 
     nh->node = vsapi->propGetNode(in, "clip", 0, 0);
     nh->vi = vsapi->getVideoInfo(nh->node);
@@ -153,13 +152,14 @@ create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     } else {
         for (int i = 0; i < num; i++) {
             int p = (int)vsapi->propGetInt(in, "planes", i, NULL);
-            RET_IF_ERROR(p < 0 || p > 2, ": planes index out of range");
+            RET_IF_ERROR(p < 0 || p > 2, "planes index out of range");
             nh->planes[p] = 1;
         }
     }
 
-    vsapi->createFilter(in, out, name, init_neighbors, neighbors_get_frame,
-                        close_neighbors, fmParallel, 0, nh, core);
+    vsapi->createFilter(in, out, filter_name, init_neighbors,
+                        neighbors_get_frame, close_neighbors, fmParallel, 0,
+                        nh, core);
 }
 
 

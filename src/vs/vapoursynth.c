@@ -44,10 +44,10 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;",
         public_convolution, (void *)"ConvolutionHV", plugin);
-    reg("Minimum",
-        "clip:clip;planes:int[]:opt;", public_neighbors, (void *)"0", plugin);
-    reg("Maximum",
-        "clip:clip;planes:int[]:opt;", public_neighbors, (void *)"1", plugin);
-    reg("Median",
-        "clip:clip;planes:int[]:opt;", public_neighbors, (void *)"2", plugin);
+    reg("Minimum", "clip:clip;planes:int[]:opt;",
+        public_neighbors, (void *)"Minimum", plugin);
+    reg("Maximum", "clip:clip;planes:int[]:opt;",
+        public_neighbors, (void *)"Maximum", plugin);
+    reg("Median", "clip:clip;planes:int[]:opt;",
+        public_neighbors, (void *)"Median", plugin);
 }
