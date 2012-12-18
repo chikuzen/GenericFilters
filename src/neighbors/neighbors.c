@@ -27,98 +27,27 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#include "common.h"
 #include "neighbors.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4996)
-#define snprintf _snprintf
-#endif
 
-
-typedef struct {
-    VSNodeRef *node;
-    const VSVideoInfo *vi;
-    int planes[3];
+typedef struct filter_data {
     const proc_neighbors *proc_function;
 } neighbors_t;
 
 
-static const VSFrameRef * VS_CC
-neighbors_get_frame(int n, int activation_reason, void **instance_data,
-                   void **frame_data, VSFrameContext *frame_ctx,
-                   VSCore *core, const VSAPI *vsapi)
+static void VS_CC
+neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
+                    const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
 {
-    neighbors_t *nh = (neighbors_t *)*instance_data;
-
-    if (activation_reason == arInitial) {
-        vsapi->requestFrameFilter(n, nh->node, frame_ctx);
-        return NULL;
-    }
-
-    if (activation_reason != arAllFramesReady) {
-        return NULL;
-    }
-
-    const VSFrameRef *src = vsapi->getFrameFilter(n, nh->node, frame_ctx);
-    const VSFormat *fi = vsapi->getFrameFormat(src);
-    if (fi->sampleType != stInteger) {
-        return src;
-    }
-    const int pl[] = {0, 1, 2};
-    const VSFrameRef *fr[] = {nh->planes[0] ? NULL : src,
-                              nh->planes[1] ? NULL : src,
-                              nh->planes[2] ? NULL : src};
-    VSFrameRef *dst = vsapi->newVideoFrame2(fi, vsapi->getFrameWidth(src, 0),
-                                            vsapi->getFrameHeight(src, 0),
-                                            fr, pl, src, core);
-
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
         }
         nh->proc_function[fi->bytesPerSample - 1](plane, src, vsapi, dst);
     }
-
-    vsapi->freeFrame(src);
-    return dst;
 }
 
-
-static void VS_CC
-init_neighbors(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
-              VSCore *core, const VSAPI *vsapi)
-{
-    neighbors_t *nh = (neighbors_t *)*instance_data;
-    vsapi->setVideoInfo(nh->vi, 1, node);
-    vsapi->clearMap(in);
-}
-
-
-static void VS_CC
-close_neighbors(void *instance_data, VSCore *core, const VSAPI *vsapi)
-{
-    neighbors_t *nh = (neighbors_t *)instance_data;
-    if (!nh) {
-        return;
-    }
-    if (nh->node) {
-        vsapi->freeNode(nh->node);
-        nh->node = NULL;
-    }
-    free(nh);
-    nh = NULL;
-}
-
-
-#define RET_IF_ERROR(cond, ...) \
-{\
-    if (cond) {\
-        close_neighbors(nh, core, vsapi);\
-        snprintf(msg, 240, __VA_ARGS__);\
-        vsapi->setError(out, msg_buff);\
-        return;\
-    }\
-}
 
 static void VS_CC
 create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
@@ -129,37 +58,31 @@ create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     snprintf(msg_buff, 256, "%s: ", filter_name);
     char *msg = msg_buff + strlen(filter_name);
 
-    neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
+    neighbors_handler_t *nh = 
+        (neighbors_handler_t *)calloc(sizeof(neighbors_handler_t), 1);
     RET_IF_ERROR(!nh, "failed to allocate handler");
+    nh->fdata = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
+    RET_IF_ERROR(!nh->fdata, "failed to allocate filter data");
 
     switch (filter_name[1]) {
-    case 'i':
-        nh->proc_function = minimum;
-        break;
     case 'a':
-        nh->proc_function = maximum;
+        nh->fdata->proc_function = maximum;
+        break;
+    case 'e':
+        nh->fdata->proc_function = median;
         break;
     default:
-        nh->proc_function = median;
+        nh->fdata->proc_function = minimum;
     }
 
     nh->node = vsapi->propGetNode(in, "clip", 0, 0);
     nh->vi = vsapi->getVideoInfo(nh->node);
+    RET_IF_ERROR(set_planes(nh, in, vsapi), "planes index out of range");
 
-    int num = vsapi->propNumElements(in, "planes");
-    if (num < 1) {
-        for (int i = 0; i < 3; nh->planes[i++] = 1);
-    } else {
-        for (int i = 0; i < num; i++) {
-            int p = (int)vsapi->propGetInt(in, "planes", i, NULL);
-            RET_IF_ERROR(p < 0 || p > 2, "planes index out of range");
-            nh->planes[p] = 1;
-        }
-    }
+    nh->get_frame_filter = neighbors_get_frame;
 
-    vsapi->createFilter(in, out, filter_name, init_neighbors,
-                        neighbors_get_frame, close_neighbors, fmParallel, 0,
-                        nh, core);
+    vsapi->createFilter(in, out, filter_name, init_filter, get_frame,
+                        free_filter, fmParallel, 0, nh, core);
 }
 
 

@@ -21,30 +21,24 @@
 */
 
 
-#ifndef CONVOLUTION_HEADER
-#define CONVOLUTION_HEADER
+#ifndef CONVOLUTION_FILTER_HEADER
+#define CONVOLUTION_FILTER_HEADER
 
 #include <stdint.h>
-#include "VapourSynth.h"
+#include "common.h"
 
+typedef void (VS_CC *proc_convolution)(struct filter_data *, int,
+                                        const VSFrameRef *, VSFrameRef *,
+                                        const VSAPI *, uint16_t);
 
-typedef struct convolution_handle convolution_t;
-
-typedef void (VS_CC *proc_convolution)(convolution_t *ch, int plane,
-                                        const VSFrameRef *src, VSFrameRef *dst,
-                                        const VSAPI *vsapi, uint16_t max);
-
-struct convolution_handle {
-    VSNodeRef *node;
-    const VSVideoInfo *vi;
-    int planes[3];
+typedef struct filter_data {
     const proc_convolution *proc_function;
     int m[25];
     int m_v[5];
     double div;
     double div_v;
     double bias;
-};
+} convolution_t;
 
 
 extern const proc_convolution convo_h3[];
@@ -81,4 +75,4 @@ static inline uint16_t VS_CC clamp_d(double val, uint16_t max)
 }
 #endif // PROC_CONVOLUTION
 
-#endif // CONVOLUTION_HEADER
+#endif // CONVOLUTION_FILTER_HEADER

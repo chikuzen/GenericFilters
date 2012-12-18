@@ -1,5 +1,5 @@
 /*
-  meighbors.h: Copyright (C) 2012  Oka Motofumi
+  neighbors.h: Copyright (C) 2012  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
@@ -21,8 +21,8 @@
 */
 
 
-#ifndef NEIGHBORS_PUBLIC_H
-#define NEIGHBORS_PUBLIC_H
+#ifndef NEIGHBORS_FILETR_H
+#define NEIGHBORS_FILETR_H
 
 #include "VapourSynth.h"
 
@@ -33,5 +33,6 @@ typedef void (VS_CC *proc_neighbors)(int plane, const VSFrameRef *src,
 extern const proc_neighbors minimum[];
 extern const proc_neighbors median[];
 extern const proc_neighbors maximum[];
+extern const proc_neighbors invert[];
 
 #endif
