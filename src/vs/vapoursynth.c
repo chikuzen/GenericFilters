@@ -27,6 +27,7 @@
 
 extern const VSPublicFunction public_convolution;
 extern const VSPublicFunction public_neighbors;
+extern const VSPublicFunction public_others;
 
 
 VS_EXTERNAL_API(void)
@@ -50,4 +51,6 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         public_neighbors, (void *)"Maximum", plugin);
     reg("Median", "clip:clip;planes:int[]:opt;",
         public_neighbors, (void *)"Median", plugin);
+    reg("Invert", "clip:clip;planes:int[]:opt",
+        public_others, (void *)"Invert", plugin);
 }

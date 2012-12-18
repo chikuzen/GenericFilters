@@ -68,7 +68,7 @@ LD="gcc"
 STRIP="strip"
 DEBUG=""
 LIBNAME=""
-CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/vs"
+CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/others -I$SRCDIR/vs"
 LDFLAGS="-shared"
 
 echo all command lines: > config.log
@@ -182,7 +182,7 @@ EOF
 cat config.mak >> config.log
 
 test "$SRCDIR" = "." || ln -sf $SRCDIR/GNUmakefile .
-mkdir -p common convolution neighbors vs
+mkdir -p common convolution neighbors others vs
 
 echo configure finished
 exit 0
