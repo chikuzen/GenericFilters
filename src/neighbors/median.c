@@ -26,37 +26,38 @@
 
 
 /* from 'Implementing Median Filters in XC4000E FPGAs' by John L. Smith */
-#define HIGHLOW(in0, in1, low, high) {\
+#define LOWHIGH(in0, in1, low, high) {\
     low = in0; high = in1;\
     if (in0 > in1) { low = in1; high = in0;}\
 }
+
 static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
                                    unsigned m3, unsigned m4, unsigned m5,
                                    unsigned m6, unsigned m7, unsigned m8)
 {
-    unsigned  x0, x1, x2, x3, x4, x5, x6, x7, x8, x9,
-              x10, x11, x12, x13, x14, x15;
-    HIGHLOW( m1,  m2,  x0,  x1);
-    HIGHLOW( m4,  m5,  x2,  x3);
-    HIGHLOW( m7,  m8,  x4,  x5);
-    HIGHLOW( m0,  x0,  x6,  x7);
-    HIGHLOW( m3,  x2,  x8,  x9);
-    HIGHLOW( m6,  x4, x10, x11);
-    HIGHLOW( x7,  x1, x12, x13);
-    HIGHLOW( x9,  x3, x14, x15);
-    HIGHLOW(x11,  x5,  x0,  x1)
-    HIGHLOW(x14,  x0,  x2,  x3);
-    x4 = x6 >  x8 ?  x6 :  x8;
-    x5 = x4 > x10 ?  x4 : x10;
-    x6 = x2 > x12 ?  x2 : x12;
-    x7 = x3 >  x6 ?  x3 :  x6;
-    x8 = x1 > x15 ? x15 :  x1;
-    x9 = x8 > x13 ? x13 :  x8;
-    HIGHLOW( x7,  x9,  x0,  x1);
-    x2 = x0 > x5 ? x0 : x5;
+    unsigned  x0, x1, x2, x3, x4, x5, x6, x7, x8, x9;
+
+    LOWHIGH( m1, m2, x0, x1);
+    LOWHIGH( m0, x0, x2, x3);
+    LOWHIGH( x1, x3, x0, x4);
+    LOWHIGH( m4, m5, x5, x6);
+    LOWHIGH( m3, x5, x7, x8);
+    LOWHIGH( x6, x8, x5, x9);
+    LOWHIGH( m7, m8, x1, x3);
+    LOWHIGH( m6, x1, x6, x8);
+    x1 = x2 > x7 ? x2 : x7;
+    LOWHIGH( x3, x8, x2, x7);
+    x3 = x1 > x6 ? x1 : x6;
+    x8 = x7 > x9 ? x7 : x9;
+    x7 = x4 > x8 ? x8 : x4;
+    LOWHIGH( x2, x5, x1, x6);
+    x2 = x0 > x1 ? x0 : x1;
+    x1 = x2 > x6 ? x6 : x2;
+    LOWHIGH( x1, x7, x0, x2);
+    x1 = x0 > x3 ? x0 : x3;
     return x1 > x2 ? x2 : x1;
 }
-#undef HIGHLOW
+#undef LOWHIGH
 
 
 static void VS_CC
