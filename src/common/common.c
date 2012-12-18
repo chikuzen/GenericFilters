@@ -75,14 +75,15 @@ set_proc_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
     int num = vsapi->propNumElements(in, "planes");
     if (num < 1) {
         for (int i = 0; i < 3; nh->planes[i++] = 1);
-    } else {
-        for (int i = 0; i < num; i++) {
-            int p = (int)vsapi->propGetInt(in, "planes", i, NULL);
-            if (p < 0 || p > 2) {
-                return -1;
-            }
-            nh->planes[p] = 1;
+        return 0;
+    }
+
+    for (int i = 0; i < num; i++) {
+        int p = (int)vsapi->propGetInt(in, "planes", i, NULL);
+        if (p < 0 || p > 2) {
+            return -1;
         }
+        nh->planes[p] = 1;
     }
 
     return 0;
