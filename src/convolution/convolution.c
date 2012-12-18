@@ -241,16 +241,6 @@ create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
             ch->div_v = div;
         }
     }
-    
-
-    fprintf(stderr, "matrix h: ");
-    for (int i = 0; i < 24; i++) {
-        fprintf(stderr, "%d ", ch->m[i]);
-    }
-    fprintf(stderr, "\n");
-    fprintf(stderr, "matrix v: %d, %d, %d, %d, %d\n", ch->m_v[0], ch->m_v[1], ch->m_v[2], ch->m_v[3], ch->m_v[4]);
-    fprintf(stderr, "planes %d %d %d\n", ch->planes[0], ch->planes[1], ch->planes[2]);
-    fprintf(stderr, "div h:%.3f v:%.3f\n", ch->div, ch->div_v);
 
     vsapi->createFilter(in, out, filter_name, init_convolution,
                         convolution_get_frame, close_convolution, fmParallel,

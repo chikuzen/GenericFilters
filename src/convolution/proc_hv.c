@@ -24,10 +24,9 @@
 #define PROC_CONVOLUTION
 #include "convolution.h"
 
-
+#define TMP(c) ((r0[( c )] * m3 + r1[( c )] * m4 + r2[( c )] * m5) / div_v)
 #define SET_CONVOLUTION_HV3(l, c, r) \
-    tmp = ((r0[( c )] * m3 + r1[( c )] * m4 + r2[( c )] * m5) / div_v);\
-    dstp[( c )] = clamp((r1[( l )] * m0 + tmp * m1 + r1[( r )] * m2) / div_h + bias, max);
+    dstp[( c )] = clamp((r1[( l )] * m0 + TMP( c ) * m1 + r1[( r )] * m2) / div_h + bias, max);
 
 static void VS_CC
 proc_3_8bit(convolution_t *ch, int plane, const VSFrameRef *src,
@@ -49,7 +48,6 @@ proc_3_8bit(convolution_t *ch, int plane, const VSFrameRef *src,
     for (int y = 0; y <= h; y++) {
         const uint8_t *r0 = r1 - !!y * stride;
         const uint8_t *r2 = r1 + !!(h - y) * stride;
-        double tmp;
         SET_CONVOLUTION_HV3(0, 0, 1);
         for (int x = 1; x < w; x++) {
             SET_CONVOLUTION_HV3(x - 1, x, x + 1);
@@ -82,7 +80,6 @@ proc_3_16bit(convolution_t *ch, int plane, const VSFrameRef *src,
     for (int y = 0; y <= h; y++) {
         const uint16_t *r0 = r1 - !!y * stride;
         const uint16_t *r2 = r1 + !!(h - y) * stride;
-        double tmp;
         SET_CONVOLUTION_HV3(0, 0, 1);
         for (int x = 1; x < w; x++) {
             SET_CONVOLUTION_HV3(x - 1, x, x + 1);
@@ -94,6 +91,7 @@ proc_3_16bit(convolution_t *ch, int plane, const VSFrameRef *src,
     }
 }
 #undef SET_CONVOLUTION_HV3
+#undef TMP
 
 
 #define SET_CONVOLUTION_HV5(i0, i1, i2, i3, i4) \
