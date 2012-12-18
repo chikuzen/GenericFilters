@@ -4,7 +4,9 @@ Neighbors - VapourSynth plugin
 
 This plugin modifies all pixel values with reference to the neighbors of them.
 
-Currentry, Neighbors has five functions named Minimum, Maximum, Median, Convolution, ConvolutionHV.
+Currentry, Neighbors has six functions as follows.
+
+All functions are supported 8/9/10/16bit planar not constant formats.
 
 Minimum:
 --------
@@ -64,6 +66,14 @@ divisor_v - vertical diisor.
 
 planes - same as Minimum.
 
+Invert:
+-------
+Invert the pixel value.::
+
+    neignbors.Invert(clip clip[, int[] planes])
+
+planes - same as Minimum.
+
 Examples:
 ---------
     >>> import vapoursynth as vs
@@ -84,7 +94,7 @@ Examples:
     - Edge detection with Sobel operator:
     >>> import math
     >>> def binalyze(val, thresh):
-    ...     return 236 if val > thresh else 16
+    ...     return 255 if val > thresh else 0
     ...
     >>> def get_lut(thresh):
     ...     lut = []
@@ -97,6 +107,7 @@ Examples:
     >>> edge_h = core.neighbors.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
     >>> edge_v = core.neighbors.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
     >>> clip = core.std.Lut2([edge_h, edge_v], get_lut(16), 0)
+    >>> clip = core.neighbors.Invert(clip) # invert edge mask
 
 Note:
 -----
