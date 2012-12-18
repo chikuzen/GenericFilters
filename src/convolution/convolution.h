@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include "VapourSynth.h"
 
+
 typedef struct convolution_handle convolution_t;
 
 typedef void (VS_CC *proc_convolution)(convolution_t *ch, int plane,
@@ -56,9 +57,21 @@ extern const proc_convolution convo_hv5[];
 
 
 #ifdef PROC_CONVOLUTION
-static inline uint16_t VS_CC clamp(double val, uint16_t max)
+static inline uint16_t VS_CC clamp_f(float val, uint16_t max)
 {
-    if (val < 0) {
+    if (val < 1.0) {
+        return 0;
+    }
+    if (val > max) {
+        return max;
+    }
+    return (uint16_t)val;
+}
+
+
+static inline uint16_t VS_CC clamp_d(double val, uint16_t max)
+{
+    if (val < 0.0) {
         return 0;
     }
     if (val > max) {

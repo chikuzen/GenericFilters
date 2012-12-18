@@ -50,8 +50,8 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
     }
     int w_ = w - 1;
     int stride = vsapi->getStride(src, plane);
-    double div = ch->div;
-    double bias = ch->bias;
+    float div = (float)ch->div;
+    float bias = (float)ch->bias;
 
     uint8_t *dstp = vsapi->getWritePtr(dst, plane);
     const uint8_t *r2 = vsapi->getReadPtr(src, plane);
@@ -61,18 +61,18 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
     for (int y = 0; y <= h; y++) {
         const uint8_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
-        int value = GET_CONVOLUTION(0, 0, 0, 1, 2);
-        dstp[0] = clamp( value / div + bias, 0xFF);
+        int32_t value = GET_CONVOLUTION(0, 0, 0, 1, 2);
+        dstp[0] = clamp_f( value / div + bias, 0xFF);
         value = GET_CONVOLUTION(0, 0, 1, 2, 3);
-        dstp[1] = clamp(value / div + bias, 0XFF);
+        dstp[1] = clamp_f(value / div + bias, 0XFF);
         for (int x = 0; x <= w; x++) {
             value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
-            dstp[x] = clamp(value / div + bias, 0xFF);
+            dstp[x] = clamp_f(value / div + bias, 0xFF);
         }
         value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
-        dstp[w_] = clamp(value / div + bias, 0xFF);
+        dstp[w_] = clamp_f(value / div + bias, 0xFF);
         value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
-        dstp[w] = clamp(value / div + bias, 0XFF);
+        dstp[w] = clamp_f(value / div + bias, 0XFF);
         dstp += stride;
         r0 = r1;
         r1 = r2;
@@ -106,18 +106,18 @@ proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
     for (int y = 0; y <= h; y++) {
         const uint16_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
-        int value = GET_CONVOLUTION(0, 0, 0, 1, 2);
-        dstp[0] = clamp( value / div + bias, 0xFF);
+        int64_t value = GET_CONVOLUTION(0, 0, 0, 1, 2);
+        dstp[0] = clamp_d( value / div + bias, 0xFF);
         value = GET_CONVOLUTION(0, 0, 1, 2, 3);
-        dstp[1] = clamp(value / div + bias, 0XFF);
+        dstp[1] = clamp_d(value / div + bias, 0XFF);
         for (int x = 0; x <= w; x++) {
             value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
-            dstp[x] = clamp(value / div + bias, 0xFF);
+            dstp[x] = clamp_d(value / div + bias, 0xFF);
         }
         value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
-        dstp[w_] = clamp(value / div + bias, 0xFF);
+        dstp[w_] = clamp_d(value / div + bias, 0xFF);
         value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
-        dstp[w] = clamp(value / div + bias, 0XFF);
+        dstp[w] = clamp_d(value / div + bias, 0XFF);
         dstp += stride;
         r0 = r1;
         r1 = r2;

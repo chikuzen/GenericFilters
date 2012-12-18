@@ -150,6 +150,10 @@ set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
     param = ft == FT_CONVO_HV ? "horizontal" : "matrix";
     for (int i = 0; i < num; i++) {
         int element = (int)vsapi->propGetInt(in, param, i, NULL);
+        if (element < -32768 || element > 32767) {
+            return ft == FT_CONVO_HV ? "horizontal has out of range value" :
+                                       "matrix has out of range value";
+        }
         ch->m[i] = element;
         ch->div += element;
     }
@@ -164,6 +168,9 @@ set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
         ch->m_v[2] = 1;
         for (int i = 0; i < num; i++) {
             int element = (int)vsapi->propGetInt(in, "vertical", i, NULL);
+            if (element < -32768 || element >32767) {
+                return "vertical has out of range value";
+            }
             ch->m_v[i] = element;
             ch->div_v += element;
         }
@@ -235,7 +242,6 @@ create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     if (err) {
         ch->bias = 0.0;
     }
-    ch->bias += 0.5;
 
     double div = vsapi->propGetFloat(
         in, ft == FT_CONVO_HV ? "divisor_h" : "divisor", 0, &err);

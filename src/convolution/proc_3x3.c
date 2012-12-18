@@ -37,8 +37,8 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
     int w_ = w - 1;
     int h = vsapi->getFrameHeight(src, plane) - 1;
     int stride = vsapi->getStride(src, plane);
-    double div = ch->div;
-    double bias = ch->bias;
+    float div = ch->div;
+    float bias = ch->bias;
 
     uint8_t *dstp = vsapi->getWritePtr(dst, plane);
     const uint8_t *r1 = vsapi->getReadPtr(src, plane);
@@ -46,20 +46,20 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
     for (int y = 0; y <= h; y++) {
         const uint8_t *r0 = r1 - stride * !!y;
         const uint8_t *r2 = r1 + stride * !!(h -y);
-        int64_t value = r0[0] * m00 + r0[0] * m01 + r0[1] * m02 +
+        int32_t value = r0[0] * m00 + r0[0] * m01 + r0[1] * m02 +
                         r1[0] * m10 + r1[0] * m11 + r1[1] * m12 +
                         r2[0] * m20 + r2[0] * m21 + r2[1] * m22;
-        dstp[0] = clamp(value / div + bias, max);
+        dstp[0] = clamp_f(value  / div + bias, max);
         for (int x = 1; x < w; x++) {
             value = r0[x - 1] * m00 + r0[x] * m01 + r0[x + 1] * m02 +
                     r1[x - 1] * m10 + r1[x] * m11 + r1[x + 1] * m12 +
                     r2[x - 1] * m20 + r2[x] * m21 + r2[x + 1] * m22;
-            dstp[x] = clamp(value / div + bias, max);
+            dstp[x] = clamp_f(value / div + bias, max);
         }
         value = r0[w_] * m00 + r0[w] * m01 + r0[w] * m02 +
                 r1[w_] * m10 + r1[w] * m11 + r1[w] * m12 +
                 r2[w_] * m20 + r2[w] * m21 + r2[w] * m22;
-        dstp[w] = clamp(value / div + bias, max);
+        dstp[w] = clamp_f(value / div + bias, max);
         r1 += stride;
         dstp += stride;
     }
@@ -93,17 +93,17 @@ proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
         int64_t value = r0[0] * m00 + r0[0] * m01 + r0[1] * m02 +
                         r1[0] * m10 + r1[0] * m11 + r1[1] * m12 +
                         r2[0] * m20 + r2[0] * m21 + r2[1] * m22;
-        dstp[0] = clamp(value / div + bias, max);
+        dstp[0] = clamp_d(value / div + bias, max);
         for (int x = 1; x < w; x++) {
             value = r0[x - 1] * m00 + r0[x] * m01 + r0[x + 1] * m02 +
                     r1[x - 1] * m10 + r1[x] * m11 + r1[x + 1] * m12 +
                     r2[x - 1] * m20 + r2[x] * m21 + r2[x + 1] * m22;
-            dstp[x] = clamp(value / div + bias, max);
+            dstp[x] = clamp_d(value / div + bias, max);
         }
         value = r0[w_] * m00 + r0[w] * m01 + r0[w] * m02 +
                 r1[w_] * m10 + r1[w] * m11 + r1[w] * m12 +
                 r2[w_] * m20 + r2[w] * m21 + r2[w] * m22;
-        dstp[w] = clamp(value / div + bias, max);
+        dstp[w] = clamp_d(value / div + bias, max);
         r1 += stride;
         dstp += stride;
     }
