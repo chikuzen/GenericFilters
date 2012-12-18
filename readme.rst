@@ -40,8 +40,7 @@ matrix - can be a matrix with 3, 5, 9 or 25 integer numbers. default is [0, 0, 0
 
 bias - additive bias to adjust the total output intensity. default is 0.0.
 
-divisor - divides the output of the convolution (calculated before adding bias).
- 0.0 means sum of the elements of the matrix or 1.0(when the sum is zero). default is 0.0.
+divisor - divides the output of the convolution (calculated before adding bias). 0.0 means sum of the elements of the matrix or 1.0(when the sum is zero). default is 0.0.
 
 planes - same as Minimum.
 
@@ -49,9 +48,9 @@ mode - If this is set as 'v' when the number of elements of the matrix is 3 or 5
 
 ConvolutionHV:
 --------------
-It performs vertical 5 convolution first and then performs horizontal 5 convolution (faster than 5x5 convolution).
+It performs vertical 5 convolution first and then performs horizontal 5 convolution (faster than 5x5 convolution).::
 
-    neighbors.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes)
+    neighbors.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
 
 horizontal - horizontal matrix. the length must be five. default is [0, 0, 1, 0, 0].
 
