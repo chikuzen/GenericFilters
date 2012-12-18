@@ -112,9 +112,9 @@ static const char * VS_CC
 set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
                             const VSAPI *vsapi)
 {
-    const char *matrix = ft == FT_CONVO_HV ? "horizontal" : "matrix";
-    int num = vsapi->propNumElements(in, matrix);
-    if ((ft == FT_CONVO_HV && num > 0 && num != 3 && num != 5) ||
+    const char *param = ft == FT_CONVO_HV ? "horizontal" : "matrix";
+    int num = vsapi->propNumElements(in, param);
+    if ((ft == FT_CONVO_HV && num > 0 && num != 5) ||
         (num > 0 && num != 3 && num != 5 && num != 9 && num != 25)) {
         return ft == FT_CONVO_HV ? "invalid horizontal" : "invalid matrix";
     }
@@ -122,13 +122,19 @@ set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
     int err;
     switch (num) {
     case 3:
+        ch->proc_function = convo_h3;
+        param = vsapi->propGetData(in, "mode", 0, &err);
+        if (!err && param[0] == 'v') {
+            ch->proc_function = convo_v3;
+        }
+        break;
     case 5:
-        ch->proc_function = num == 3 ? convo_hv3 : convo_hv5;
+        ch->proc_function = convo_hv5;
         if (ft == FT_CONVO) {
-            ch->proc_function = num == 3 ? convo_h3 : convo_h5;
-            const char *mode = vsapi->propGetData(in, "mode", 0, &err);
-            if (!err && mode[0] == 'v') {
-                ch->proc_function = num == 3 ? convo_v3 : convo_v5;
+            ch->proc_function = convo_h5;
+            param = vsapi->propGetData(in, "mode", 0, &err);
+            if (!err && param[0] == 'v') {
+                ch->proc_function = convo_v5;
             }
         }
         break;
@@ -136,13 +142,14 @@ set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
         ch->proc_function = convo_5x5;
         break;
     default:
-        ch->proc_function = ft == FT_CONVO_HV ? convo_hv3 : convo_3x3;
+        ch->proc_function = ft == FT_CONVO_HV ? convo_hv5 : convo_3x3;
     }
 
     ch->m[4] = ch->m_v[1] = 1;
-    ch->m[1] = ft == FT_CONVO_HV ? 1 : 0;
+    ch->m[2] = ft == FT_CONVO_HV ? 1 : 0;
+    param = ft == FT_CONVO_HV ? "horizontal" : "matrix";
     for (int i = 0; i < num; i++) {
-        int element = (int)vsapi->propGetInt(in, matrix, i, NULL);
+        int element = (int)vsapi->propGetInt(in, param, i, NULL);
         ch->m[i] = element;
         ch->div += element;
     }
@@ -151,9 +158,10 @@ set_matrix_and_proc_function(convolution_t *ch, filter_type ft, const VSMap *in,
     }
     if (ft == FT_CONVO_HV) {
         num = vsapi->propNumElements(in, "vertical");
-        if (num > 0 && num != 3 && num != 5) {
+        if (num > 0 && num != 5) {
             return "invalid vertical";
         }
+        ch->m_v[2] = 1;
         for (int i = 0; i < num; i++) {
             int element = (int)vsapi->propGetInt(in, "vertical", i, NULL);
             ch->m_v[i] = element;
@@ -204,7 +212,7 @@ create_convolution(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 {
     const char *filter_name = (char *)user_data;
     char msg_buff[256] = { 0 };
-    strcpy(msg_buff, filter_name);
+    snprintf(msg_buff, 256, "%s: ", filter_name);
     char *msg = msg_buff + strlen(msg_buff);
     int err;
 
