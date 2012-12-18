@@ -126,7 +126,7 @@ create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 {
     const char *filter_name = (char *)user_data;
     char msg_buff[256] = {0};
-    snprintf(msg_buff, "%s: ", filter_name);
+    snprintf(msg_buff, 256, "%s: ", filter_name);
     char *msg = msg_buff + strlen(filter_name);
 
     neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
