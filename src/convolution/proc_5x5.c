@@ -39,40 +39,39 @@
      r4[i0] * m40 + r4[i1] * m41 + r4[i2] * m42 + r4[i3] * m43 + r4[i4] * m44)
 
 static void VS_CC
-proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
-          const VSAPI *vsapi, uint16_t max)
+proc_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
+          const uint8_t *r2, uint16_t max)
 {
     SET_MATRIX();
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    if (w < 3 || h < 3) {
-        return;
-    }
-    int w_ = w - 1;
-    int stride = vsapi->getStride(src, plane);
     float div = (float)ch->div;
     float bias = (float)ch->bias;
 
-    uint8_t *dstp = vsapi->getWritePtr(dst, plane);
-    const uint8_t *r2 = vsapi->getReadPtr(src, plane);
+    w--; h--;
+    int w_ = w - 1;
     const uint8_t *r1 = r2;
     const uint8_t *r0 = r1;
     const uint8_t *r3 = r2 + stride;
 
     for (int y = 0; y <= h; y++) {
         const uint8_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
+
         int32_t value = GET_CONVOLUTION(0, 0, 0, 1, 2);
         dstp[0] = clamp_f( value / div + bias, 0xFF);
+
         value = GET_CONVOLUTION(0, 0, 1, 2, 3);
         dstp[1] = clamp_f(value / div + bias, 0XFF);
+
         for (int x = 0; x <= w; x++) {
             value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
             dstp[x] = clamp_f(value / div + bias, 0xFF);
         }
+
         value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
         dstp[w_] = clamp_f(value / div + bias, 0xFF);
+
         value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
         dstp[w] = clamp_f(value / div + bias, 0XFF);
+
         dstp += stride;
         r0 = r1;
         r1 = r2;
@@ -83,41 +82,41 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
 
 static void VS_CC
-proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
-           const VSAPI *vsapi, uint16_t max)
+proc_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
+           const uint8_t *srcp, uint16_t max)
 {
     SET_MATRIX();
-
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    if (w < 3 || h < 3) {
-        return;
-    }
-    int w_ = w - 1;
-    int stride = vsapi->getStride(src, plane) / 2;
     double div = ch->div;
     double bias = ch->bias;
 
-    uint16_t *dstp = (uint16_t *)vsapi->getWritePtr(dst, plane);
-    const uint16_t *r2 = (uint16_t *)vsapi->getReadPtr(src, plane);
+    w--; h--; stride >>= 1;
+    int w_ = w - 1;
+    uint16_t *dstp = (uint16_t *)d;
+    const uint16_t *r2 = (uint16_t *)srcp;
     const uint16_t *r1 = r2;
     const uint16_t *r0 = r1;
     const uint16_t *r3 = r2 + stride;
 
     for (int y = 0; y <= h; y++) {
         const uint16_t *r4 = r3 + (!!(h - y - 1) - !(h - y)) * stride;
+
         int64_t value = GET_CONVOLUTION(0, 0, 0, 1, 2);
         dstp[0] = clamp_d( value / div + bias, 0xFF);
+
         value = GET_CONVOLUTION(0, 0, 1, 2, 3);
         dstp[1] = clamp_d(value / div + bias, 0XFF);
+
         for (int x = 0; x <= w; x++) {
             value = GET_CONVOLUTION(x - 2, x - 1, x, x + 1, x + 2);
             dstp[x] = clamp_d(value / div + bias, 0xFF);
         }
+
         value = GET_CONVOLUTION(w_ - 2, w_ -1, w_, w, w);
         dstp[w_] = clamp_d(value / div + bias, 0xFF);
+
         value = GET_CONVOLUTION(w_ - 1, w_, w, w, w);
         dstp[w] = clamp_d(value / div + bias, 0XFF);
+
         dstp += stride;
         r0 = r1;
         r1 = r2;

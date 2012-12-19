@@ -26,22 +26,18 @@
 
 
 static void VS_CC
-proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
-          const VSAPI *vsapi, uint16_t max)
+proc_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
+          const uint8_t *r1, uint16_t max)
 {
     int m00 = ch->m[0], m01 = ch->m[1], m02 = ch->m[2],
         m10 = ch->m[3], m11 = ch->m[4], m12 = ch->m[5],
         m20 = ch->m[6], m21 = ch->m[7], m22 = ch->m[8];
 
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    int w_ = w - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    int stride = vsapi->getStride(src, plane);
     float div = ch->div;
     float bias = ch->bias;
 
-    uint8_t *dstp = vsapi->getWritePtr(dst, plane);
-    const uint8_t *r1 = vsapi->getReadPtr(src, plane);
+    w--; h--;
+    int w_ = w - 1;
 
     for (int y = 0; y <= h; y++) {
         const uint8_t *r0 = r1 - stride * !!y;
@@ -67,25 +63,20 @@ proc_8bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
 
 
 static void VS_CC
-proc_16bit(convolution_t *ch, int plane, const VSFrameRef *src, VSFrameRef *dst,
-           const VSAPI *vsapi, uint16_t max)
+proc_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
+           const uint8_t *srcp, uint16_t max)
 {
     int m00 = ch->m[0], m01 = ch->m[1], m02 = ch->m[2],
         m10 = ch->m[3], m11 = ch->m[4], m12 = ch->m[5],
         m20 = ch->m[6], m21 = ch->m[7], m22 = ch->m[8];
 
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    if (w < 1) {
-        return;
-    }
-    int w_ = w - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    int stride = vsapi->getStride(src, plane) / 2;
     double div = ch->div;
     double bias = ch->bias;
 
-    uint16_t *dstp = (uint16_t *)vsapi->getWritePtr(dst, plane);
-    const uint16_t *r1 = (uint16_t *)vsapi->getReadPtr(src, plane);
+    w--; h--; stride >>= 1;
+    int w_ = w - 1;
+    uint16_t *dstp = (uint16_t *)d;
+    const uint16_t *r1 = (uint16_t *)srcp;
 
     for (int y = 0; y <= h; y++) {
         const uint16_t *r0 = r1 - stride * !!y;

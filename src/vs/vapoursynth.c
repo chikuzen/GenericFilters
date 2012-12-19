@@ -25,10 +25,7 @@
 
 #define NEIGHBORS_VERSION "0.1.0"
 
-extern const VSPublicFunction public_convolution;
-extern const VSPublicFunction public_neighbors;
-extern const VSPublicFunction public_others;
-
+extern const VSPublicFunction public_filter;
 
 VS_EXTERNAL_API(void)
 VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
@@ -40,17 +37,17 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
     reg("Convolution",
         "clip:clip;matrix:int[]:opt;bias:float:opt;divisor:float:opt;"
         "planes:int[]:opt;mode:data:opt;",
-        public_convolution, (void *)"Convolution", plugin);
+        public_filter, (void *)"Convolution", plugin);
     reg("ConvolutionHV",
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;",
-        public_convolution, (void *)"ConvolutionHV", plugin);
+        public_filter, (void *)"ConvolutionHV", plugin);
     reg("Minimum", "clip:clip;planes:int[]:opt;",
-        public_neighbors, (void *)"Minimum", plugin);
+        public_filter, (void *)"Minimum", plugin);
     reg("Maximum", "clip:clip;planes:int[]:opt;",
-        public_neighbors, (void *)"Maximum", plugin);
+        public_filter, (void *)"Maximum", plugin);
     reg("Median", "clip:clip;planes:int[]:opt;",
-        public_neighbors, (void *)"Median", plugin);
+        public_filter, (void *)"Median", plugin);
     reg("Invert", "clip:clip;planes:int[]:opt",
-        public_others, (void *)"Invert", plugin);
+        public_filter, (void *)"Invert", plugin);
 }

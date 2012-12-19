@@ -1,4 +1,29 @@
+/*
+  common.c: Copyright (C) 2012  Oka Motofumi
+
+  Author: Oka Motofumi (chikuzen.mo at gmail dot com)
+
+  This file is part of Neighbors
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with the author; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+*/
+
+
 #include <stdlib.h>
+#include <string.h>
+
 #include "common.h"
 
 
@@ -40,8 +65,8 @@ get_frame_common(int n, int activation_reason, void **instance_data,
 
 
 static void VS_CC
-init_handler(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
-             VSCore *core, const VSAPI *vsapi)
+vs_init(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
+        VSCore *core, const VSAPI *vsapi)
 {
     neighbors_handler_t *nh = (neighbors_handler_t *)*instance_data;
     vsapi->setVideoInfo(nh->vi, 1, node);
@@ -70,7 +95,7 @@ close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
 
 
 static int VS_CC
-set_proc_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
+set_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
 {
     int num = vsapi->propNumElements(in, "planes");
     if (num < 1) {
@@ -90,7 +115,70 @@ set_proc_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
 }
 
 
-const VSFilterInit init_filter = init_handler;
-const VSFilterGetFrame get_frame = get_frame_common;
-const VSFilterFree free_filter = close_handler;
-const set_planes_t set_planes = set_proc_planes;
+typedef struct {
+    set_filter_data_t function;
+    filter_id_t id;
+} setter_t;
+
+
+static setter_t get_setter(const char *filter_name)
+{
+    struct {
+        const char *name;
+        setter_t setter;
+    } table[] = {
+        { "Convolution",   { set_convolution, ID_CONVO    } },
+        { "ConvolutionHV", { set_convolution, ID_CONVO_HV } },
+        { "Maximum",       { set_neighbors,   ID_MAXIMUM  } },
+        { "Median",        { set_neighbors,   ID_MEDIAN   } },
+        { "Minimum",       { set_neighbors,   ID_MINIMUM  } },
+        { "Invert",        { set_invert,      ID_INVERT   } },
+        { filter_name,     { NULL,            ID_NONE     } }
+    };
+
+    int i = 0;
+    while (strcmp(filter_name, table[i].name) != 0) i++;
+
+    return table[i].setter;
+}
+
+#undef RET_IF_ERROR
+#define RET_IF_ERROR(cond, ...) { \
+    if (cond) { \
+        close_handler(nh, core, vsapi); \
+        snprintf(msg, 240, __VA_ARGS__); \
+        vsapi->setError(out, msg_buff); \
+        return; \
+    } \
+}
+
+static void VS_CC
+create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
+                   const VSAPI *vsapi)
+{
+    const char *filter_name = (char *)user_data;
+    char msg_buff[256] = { 0 };
+    snprintf(msg_buff, 256, "%s: ", filter_name);
+    char *msg = msg_buff + strlen(msg_buff);
+
+    neighbors_handler_t *nh =
+        (neighbors_handler_t *)calloc(sizeof(neighbors_handler_t), 1);
+    RET_IF_ERROR(!nh, "failed to allocate handler");
+
+    nh->node = vsapi->propGetNode(in, "clip", 0, 0);
+    nh->vi = vsapi->getVideoInfo(nh->node);
+    RET_IF_ERROR(set_planes(nh, in, vsapi), "planes index out of range");
+
+    setter_t setter = get_setter(filter_name);
+    RET_IF_ERROR(setter.id == ID_NONE, "initialize failed");
+
+    setter.function(nh, setter.id, msg, in, out, vsapi);
+    RET_IF_ERROR(msg[0], " ");
+
+    vsapi->createFilter(in, out, filter_name, vs_init, get_frame_common,
+                        close_handler, fmParallel, 0, nh, core);
+}
+#undef RET_IF_ERROR
+
+
+const VSPublicFunction public_filter = create_filter_common;

@@ -6,8 +6,8 @@ vpath %.h $(SRCDIR)
 SRCS = convolution/convolution.c convolution/proc_3x3.c convolution/proc_5x5.c \
        convolution/proc_h.c      convolution/proc_v.c   convolution/proc_hv.c \
        neighbors/maximum.c       neighbors/median.c     neighbors/minimum.c \
-       neighbors/neighbors.c     others/invert.c        others/others.c \
-       common/common.c           vs/vapoursynth.c
+       neighbors/neighbors.c     others/invert.c        common/common.c \
+       vs/vapoursynth.c
 
 OBJS = $(SRCS:%.c=%.o)
 
@@ -20,7 +20,8 @@ $(LIBNAME): $(OBJS)
 	-@ $(if $(STRIP), $(STRIP) $@)
 
 %.o: %.c .depend
-	$(CC) -c $(CFLAGS) -o $@ $<
+	@echo $(CC) -o $@ $(<:$(SRCDIR)/%.c=%.o)
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 install: all
 	install -d $(libdir)

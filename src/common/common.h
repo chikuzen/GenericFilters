@@ -23,22 +23,30 @@ struct neighbors_handler {
                                    const VSFrameRef *, VSFrameRef *);
 };
 
+typedef enum {
+    ID_NONE,
+    ID_CONVO,
+    ID_CONVO_HV,
+    ID_MAXIMUM,
+    ID_MEDIAN,
+    ID_MINIMUM,
+    ID_INVERT,
+    ID_LIMITTER,
+} filter_id_t;
 
-typedef int (VS_CC *set_planes_t)(neighbors_handler_t *nh, const VSMap *in,
-                                   const VSAPI *vsapi);
 
+typedef void (VS_CC *set_filter_data_t)(neighbors_handler_t *nh, filter_id_t id,
+                                         char *msg, const VSMap *in, VSMap *out,
+                                         const VSAPI *vsapi);
 
-extern const VSFilterInit init_filter;
-extern const VSFilterGetFrame get_frame;
-extern const VSFilterFree free_filter;
-extern const set_planes_t set_planes;
+extern const set_filter_data_t set_convolution;
+extern const set_filter_data_t set_neighbors;
+extern const set_filter_data_t set_invert;
 
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
-        free_filter(nh, core, vsapi); \
         snprintf(msg, 240, __VA_ARGS__); \
-        vsapi->setError(out, msg_buff); \
         return; \
     } \
 }

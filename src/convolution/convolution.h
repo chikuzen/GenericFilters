@@ -25,20 +25,21 @@
 #define CONVOLUTION_FILTER_HEADER
 
 #include <stdint.h>
-#include "common.h"
+#include "VapourSynth.h"
 
-typedef void (VS_CC *proc_convolution)(struct filter_data *, int,
-                                        const VSFrameRef *, VSFrameRef *,
-                                        const VSAPI *, uint16_t);
+typedef struct filter_data convolution_t;
 
-typedef struct filter_data {
-    const proc_convolution *proc_function;
+typedef void (VS_CC *proc_convolution)(convolution_t *, int, int, int,
+                                        uint8_t *, const uint8_t *, uint16_t);
+
+struct filter_data {
     int m[25];
     int m_v[5];
     double div;
     double div_v;
     double bias;
-} convolution_t;
+    const proc_convolution *proc_function;
+};
 
 
 extern const proc_convolution convo_h3[];

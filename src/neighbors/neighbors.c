@@ -23,17 +23,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdint.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "neighbors.h"
-
-
-typedef struct filter_data {
-    const proc_neighbors *proc_function;
-} neighbors_t;
 
 
 static void VS_CC
@@ -44,46 +37,39 @@ neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
         if (fr[plane]) {
             continue;
         }
-        nh->proc_function[fi->bytesPerSample - 1](plane, src, vsapi, dst);
+        
+        int w = vsapi->getFrameWidth(src, plane) - 1;
+        int h = vsapi->getFrameHeight(src, plane) - 1;
+        int stride = vsapi->getStride(src, plane);
+
+        uint8_t *dstp = vsapi->getWritePtr(dst, plane);
+        const uint8_t *srcp = vsapi->getReadPtr(src, plane);
+        nh->proc_function[fi->bytesPerSample - 1](w, h, stride, dstp, srcp);
     }
 }
 
 
 static void VS_CC
-create_neighbors(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
-                 const VSAPI *vsapi)
+set_neighbors_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
+                   const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    const char *filter_name = (char *)user_data;
-    char msg_buff[256] = {0};
-    snprintf(msg_buff, 256, "%s: ", filter_name);
-    char *msg = msg_buff + strlen(filter_name);
+    neighbors_t *nb = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
+    RET_IF_ERROR(!nb, "failed to allocate filter data");
+    nh->fdata = nb;
 
-    neighbors_handler_t *nh = 
-        (neighbors_handler_t *)calloc(sizeof(neighbors_handler_t), 1);
-    RET_IF_ERROR(!nh, "failed to allocate handler");
-    nh->fdata = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
-    RET_IF_ERROR(!nh->fdata, "failed to allocate filter data");
-
-    switch (filter_name[1]) {
-    case 'a':
-        nh->fdata->proc_function = maximum;
+    switch (id) {
+    case ID_MAXIMUM:
+        nb->proc_function = maximum;
         break;
-    case 'e':
-        nh->fdata->proc_function = median;
+    case ID_MEDIAN:
+        nb->proc_function = median;
         break;
     default:
-        nh->fdata->proc_function = minimum;
+        nb->proc_function = minimum;
     }
 
-    nh->node = vsapi->propGetNode(in, "clip", 0, 0);
-    nh->vi = vsapi->getVideoInfo(nh->node);
-    RET_IF_ERROR(set_planes(nh, in, vsapi), "planes index out of range");
-
     nh->get_frame_filter = neighbors_get_frame;
-
-    vsapi->createFilter(in, out, filter_name, init_filter, get_frame,
-                        free_filter, fmParallel, 0, nh, core);
 }
 
 
-const VSPublicFunction public_neighbors = create_neighbors;
+const set_filter_data_t set_neighbors = set_neighbors_data;

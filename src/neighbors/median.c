@@ -61,25 +61,20 @@ static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
 
 
 static void VS_CC
-proc_median_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
-                 VSFrameRef *dst)
+proc_8bit(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
 {
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    int stride = vsapi->getStride(src, plane);
-    const uint8_t *r1 = vsapi->getReadPtr(src, plane);
-    uint8_t *dstp = vsapi->getWritePtr(dst, plane);
-
     for (int y = 0; y <= h; y++) {
         const uint8_t *r0 = r1 - stride * !!y;
         const uint8_t *r2 = r1 + stride * !!(h -y);
+
         for (int x = 0; x <= w; x++) {
             int xl = x - !!x;
             int xr = x + !!(w - x);
-            dstp[x] = get_median_9(*(r0 + xl), *(r0 + x), *(r0 + xr),
-                                   *(r1 + xl), *(r1 + x), *(r1 + xr),
-                                   *(r2 + xl), *(r2 + x), *(r2 + xr));
+            dstp[x] = get_median_9(r0[xl], r0[x], r0[xr],
+                                   r1[xl], r1[x], r1[xr],
+                                   r2[xl], r2[x], r2[xr]);
         }
+
         r1 += stride;
         dstp += stride;
     }
@@ -87,25 +82,24 @@ proc_median_8bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
 
 
 static void VS_CC
-proc_median_16bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
-                  VSFrameRef *dst)
+proc_16bit(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
 {
-    int w = vsapi->getFrameWidth(src, plane) - 1;
-    int h = vsapi->getFrameHeight(src, plane) - 1;
-    int stride = vsapi->getStride(src, plane) / 2;
-    const uint16_t *r1 = (uint16_t *)vsapi->getReadPtr(src, plane);
-    uint16_t *dstp = (uint16_t *)vsapi->getWritePtr(dst, plane);
+    stride >>= 1;
+    const uint16_t *r1 = (uint16_t *)srcp;
+    uint16_t *dstp = (uint16_t *)d;
 
     for (int y = 0; y <= h; y++) {
         const uint16_t *r0 = r1 - stride * !!y;
         const uint16_t *r2 = r1 + stride * !!(h -y);
+
         for (int x = 0; x <= w; x++) {
             int xl = x - !!x;
             int xr = x + !!(w - x);
-            dstp[x] = get_median_9(*(r0 + xl), *(r0 + x), *(r0 + xr),
-                                   *(r1 + xl), *(r1 + x), *(r1 + xr),
-                                   *(r2 + xl), *(r2 + x), *(r2 + xr));
+            dstp[x] = get_median_9(r0[xl], r0[x], r0[xr],
+                                   r1[xl], r1[x], r1[xr],
+                                   r2[xl], r2[x], r2[xr]);
         }
+
         r1 += stride;
         dstp += stride;
     }
@@ -113,6 +107,6 @@ proc_median_16bit(int plane, const VSFrameRef *src, const VSAPI *vsapi,
 
 
 const proc_neighbors median[] = {
-    proc_median_8bit,
-    proc_median_16bit
+    proc_8bit,
+    proc_16bit
 };

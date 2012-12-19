@@ -24,10 +24,14 @@
 #ifndef NEIGHBORS_FILETR_H
 #define NEIGHBORS_FILETR_H
 
+#include <stdint.h>
 #include "VapourSynth.h"
 
-typedef void (VS_CC *proc_neighbors)(int plane, const VSFrameRef *src,
-                                      const VSAPI *vsapi, VSFrameRef *dst);
+typedef void (VS_CC *proc_neighbors)(int, int, int, uint8_t *, const uint8_t *);
+
+typedef struct filter_data {
+    const proc_neighbors *proc_function;
+} neighbors_t;
 
 
 extern const proc_neighbors minimum[];
