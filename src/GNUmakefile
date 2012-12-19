@@ -6,8 +6,8 @@ vpath %.h $(SRCDIR)
 SRCS = convolution/convolution.c convolution/proc_3x3.c convolution/proc_5x5.c \
        convolution/proc_h.c      convolution/proc_v.c   convolution/proc_hv.c \
        neighbors/maximum.c       neighbors/median.c     neighbors/minimum.c \
-       neighbors/neighbors.c     others/invert.c        common/common.c \
-       vs/vapoursynth.c
+       neighbors/neighbors.c     others/invert.c        others/limitter.c \
+       common/common.c           vs/vapoursynth.c
 
 OBJS = $(SRCS:%.c=%.o)
 

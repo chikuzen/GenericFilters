@@ -48,6 +48,8 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         public_filter, (void *)"Maximum", plugin);
     reg("Median", "clip:clip;planes:int[]:opt;",
         public_filter, (void *)"Median", plugin);
-    reg("Invert", "clip:clip;planes:int[]:opt",
+    reg("Invert", "clip:clip;planes:int[]:opt;",
         public_filter, (void *)"Invert", plugin);
+    reg("Limitter", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+        public_filter, (void *)"Limitter", plugin);
 }

@@ -42,7 +42,7 @@ typedef void (VS_CC *set_filter_data_t)(neighbors_handler_t *nh, filter_id_t id,
 extern const set_filter_data_t set_convolution;
 extern const set_filter_data_t set_neighbors;
 extern const set_filter_data_t set_invert;
-
+extern const set_filter_data_t set_limitter;
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \

@@ -133,6 +133,7 @@ static setter_t get_setter(const char *filter_name)
         { "Median",        { set_neighbors,   ID_MEDIAN   } },
         { "Minimum",       { set_neighbors,   ID_MINIMUM  } },
         { "Invert",        { set_invert,      ID_INVERT   } },
+        { "Limitter",      { set_limitter,    ID_LIMITTER } },
         { filter_name,     { NULL,            ID_NONE     } }
     };
 
