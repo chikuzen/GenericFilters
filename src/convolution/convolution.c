@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "convolution.h"
@@ -188,4 +187,4 @@ set_convolution_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
 #undef RET_IF_ERROR
 
 
-const set_filter_data_t set_convolution = set_convolution_data;
+const set_filter_data_func set_convolution = set_convolution_data;

@@ -116,7 +116,7 @@ set_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
 
 
 typedef struct {
-    set_filter_data_t function;
+    set_filter_data_func function;
     filter_id_t id;
 } setter_t;
 
@@ -143,7 +143,11 @@ static setter_t get_setter(const char *filter_name)
     return table[i].setter;
 }
 
+
+#ifdef RET_IF_ERROR
 #undef RET_IF_ERROR
+#endif
+
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
         close_handler(nh, core, vsapi); \

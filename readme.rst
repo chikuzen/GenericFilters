@@ -74,6 +74,18 @@ Invert the pixel value.::
 
 planes - same as Minimum.
 
+Limitter:
+---------
+Clamp the pixel value.::
+
+    neighbors.Limitter(clip clip[, int min, int max, int[] planes])
+
+min - minimum threshold of pixel value. default is 0.
+
+max - maximum threshold of the pixel value. default is 65535.
+
+planes - same as Minimum.
+
 Examples:
 ---------
     >>> import vapoursynth as vs

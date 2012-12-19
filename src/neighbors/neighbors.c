@@ -72,4 +72,4 @@ set_neighbors_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
 }
 
 
-const set_filter_data_t set_neighbors = set_neighbors_data;
+const set_filter_data_func set_neighbors = set_neighbors_data;

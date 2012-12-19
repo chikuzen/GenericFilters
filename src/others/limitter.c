@@ -134,4 +134,4 @@ set_limitter_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
 }
 
 
-const set_filter_data_t set_limitter = set_limitter_data;
+const set_filter_data_func set_limitter = set_limitter_data;

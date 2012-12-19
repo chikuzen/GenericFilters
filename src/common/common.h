@@ -35,14 +35,15 @@ typedef enum {
 } filter_id_t;
 
 
-typedef void (VS_CC *set_filter_data_t)(neighbors_handler_t *nh, filter_id_t id,
-                                         char *msg, const VSMap *in, VSMap *out,
-                                         const VSAPI *vsapi);
+typedef void (VS_CC *set_filter_data_func)(neighbors_handler_t *nh,
+                                            filter_id_t id, char *msg,
+                                            const VSMap *in, VSMap *out,
+                                            const VSAPI *vsapi);
 
-extern const set_filter_data_t set_convolution;
-extern const set_filter_data_t set_neighbors;
-extern const set_filter_data_t set_invert;
-extern const set_filter_data_t set_limitter;
+extern const set_filter_data_func set_convolution;
+extern const set_filter_data_func set_neighbors;
+extern const set_filter_data_func set_invert;
+extern const set_filter_data_func set_limitter;
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
