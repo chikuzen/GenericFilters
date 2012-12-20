@@ -35,8 +35,8 @@ typedef void (VS_CC *proc_convolution)(convolution_t *, int, int, int,
 struct filter_data {
     int m[25];
     int m_v[5];
-    double div;
-    double div_v;
+    double rdiv;
+    double rdiv_v;
     double bias;
     const proc_convolution *proc_function;
 };

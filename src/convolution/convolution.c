@@ -126,10 +126,10 @@ set_matrix_and_proc_function(convolution_t *ch, filter_id_t id, const VSMap *in,
         RET_IF_ERROR(element < -32768 || element > 32767,
                      "%s has out of range value", param);
         ch->m[i] = element;
-        ch->div += element;
+        ch->rdiv += element;
     }
-    if (ch->div == 0.0) {
-        ch->div = 1.0;
+    if (ch->rdiv == 0.0) {
+        ch->rdiv = 1.0;
     }
 
     if (id == ID_CONVO) {
@@ -144,10 +144,10 @@ set_matrix_and_proc_function(convolution_t *ch, filter_id_t id, const VSMap *in,
         RET_IF_ERROR(element < -32768 || element >32767,
                      "vertical has out of range value");
         ch->m_v[i] = element;
-        ch->div_v += element;
+        ch->rdiv_v += element;
     }
-    if (ch->div_v == 0.0) {
-        ch->div_v = 1.0;
+    if (ch->rdiv_v == 0.0) {
+        ch->rdiv_v = 1.0;
     }
 }
 
@@ -172,14 +172,16 @@ set_convolution_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
     double div = vsapi->propGetFloat(
         in, id == ID_CONVO_HV ? "divisor_h" : "divisor", 0, &err);
     if (!err && div != 0.0) {
-        ch->div = div;
+        ch->rdiv = div;
     }
+    ch->rdiv = 1.0 / ch->rdiv;
 
     if (id == ID_CONVO_HV) {
         div = vsapi->propGetFloat(in, "divisor_v", 0, &err);
         if (!err && div != 0.0) {
-            ch->div_v = div;
+            ch->rdiv_v = div;
         }
+        ch->rdiv_v = 1.0 / ch->rdiv_v;
     }
 
     nh->get_frame_filter = convolution_get_frame;

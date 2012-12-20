@@ -25,11 +25,11 @@
 #include "convolution.h"
 
 #define TMP(c) \
-    ((r0[( c )] * v0 + r1[( c )] * v1 + r2[( c )] * v2 + r3[( c )] * v3 + r4[( c )] * v4) / div_v)
+    ((r0[( c )] * v0 + r1[( c )] * v1 + r2[( c )] * v2 + r3[( c )] * v3 + r4[( c )] * v4) * rdiv_v)
 
 #define SET_CONVOLUTION_HV5(i0, i1, i2, i3, i4, fd) \
     dstp[( i2 )] = \
-    clamp_##fd((r2[( i0 )] * h0 + r2[( i1 )] * h1 + TMP(( i2 )) * h2 + r2[( i3 )] * h3 + r2[( i4 )] * h4) / div_h + bias, max);
+    clamp_##fd((r2[( i0 )] * h0 + r2[( i1 )] * h1 + TMP(( i2 )) * h2 + r2[( i3 )] * h3 + r2[( i4 )] * h4) * rdiv_h + bias, max);
 
 static void VS_CC
 proc_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
@@ -40,8 +40,8 @@ proc_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
         v0 = ch->m_v[0], v1 = ch->m_v[1], v2 = ch->m_v[2],
         v3 = ch->m_v[3], v4 = ch->m_v[4];
 
-    int div_h = ch->div;
-    float div_v = (float)ch->div_v;
+    float rdiv_h = (float)ch->rdiv;
+    float rdiv_v = (float)ch->rdiv_v;
     float bias = (float)ch->bias;
 
     w--; h--;
@@ -82,8 +82,8 @@ proc_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
         v0 = ch->m_v[0], v1 = ch->m_v[1], v2 = ch->m_v[2],
         v3 = ch->m_v[3], v4 = ch->m_v[4];
 
-    int div_h = ch->div;
-    double div_v = ch->div_v;
+    double rdiv_h = ch->rdiv;
+    double rdiv_v = ch->rdiv_v;
     double bias = ch->bias;
 
     w--; h--; stride >>= 1;

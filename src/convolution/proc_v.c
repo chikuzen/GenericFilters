@@ -31,7 +31,7 @@ proc_3_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
 {
     int m0 = ch->m[0], m1 = ch->m[1], m2 = ch->m[2];
 
-    float div = (float)ch->div;
+    float rdiv = (float)ch->rdiv;
     float bias = (float)ch->bias;
 
     h--;
@@ -41,7 +41,7 @@ proc_3_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
         const uint8_t *r2 = r1 + !!(h - y) * stride;
         for (int x = 0; x < w; x++) {
             int32_t value = r0[x] * m0 + r1[x] * m1 + r2[x] * m2;
-            dstp[x] = clamp_f(value / div + bias, max);
+            dstp[x] = clamp_f(value * rdiv + bias, max);
         }
         dstp += stride;
         r1 += stride;
@@ -55,7 +55,7 @@ proc_3_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
 {
     int m0 = ch->m[0], m1 = ch->m[1], m2 = ch->m[2];
 
-    double div = ch->div;
+    double rdiv = ch->rdiv;
     double bias = ch->bias;
 
     h--; stride >>= 1;
@@ -69,7 +69,7 @@ proc_3_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
 
         for (int x = 0; x < w; x++) {
             int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2;
-            dstp[x] = clamp_d(value / div + bias, max);
+            dstp[x] = clamp_d(value * rdiv + bias, max);
         }
 
         dstp += stride;
@@ -84,7 +84,7 @@ proc_5_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
 {
     int m0 = ch->m[0], m1 = ch->m[1], m2 = ch->m[2], m3 = ch->m[3], m4 = ch->m[4];
 
-    float div = (float)ch->div;
+    float rdiv = (float)ch->rdiv;
     float bias = (float)ch->bias;
 
     h--;
@@ -99,7 +99,7 @@ proc_5_8bit(convolution_t *ch, int w, int h, int stride, uint8_t *dstp,
         for (int x = 0; x < w; x++) {
             int32_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2 +
                             *(r3 + x) * m3 + *(r4 + x) * m4;
-            dstp[x] = clamp_f(value / div + bias, max);
+            dstp[x] = clamp_f(value * rdiv + bias, max);
         }
 
         dstp += stride;
@@ -117,7 +117,7 @@ proc_5_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
 {
     int m0 = ch->m[0], m1 = ch->m[1], m2 = ch->m[2], m3 = ch->m[3], m4 = ch->m[4];
 
-    double div = ch->div;
+    double rdiv = ch->rdiv;
     double bias = ch->bias;
 
     h--; stride >>= 1;
@@ -134,7 +134,7 @@ proc_5_16bit(convolution_t *ch, int w, int h, int stride, uint8_t *d,
         for (int x = 0; x < w; x++) {
             int64_t value = *(r0 + x) * m0 + *(r1 + x) * m1 + *(r2 + x) * m2 +
                             *(r3 + x) * m3 + *(r4 + x) * m4;
-            dstp[x] = clamp_d(value / div + bias, max);
+            dstp[x] = clamp_d(value * rdiv + bias, max);
         }
 
         dstp += stride;
