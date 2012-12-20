@@ -64,7 +64,7 @@ set_xxflate_data(tweak_handler_t *th, filter_id_t id, char *msg,
     if (err || xh->th > 0xFFFF) {
         xh->th = 0xFFFF;
     }
-    fprintf(stderr, "th: %d\n", xh->th);
+
     xh->function = id == ID_INFLATE ? inflate : deflate;
 
     th->get_frame_filter = xxflate_get_frame;
