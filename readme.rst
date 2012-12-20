@@ -102,10 +102,9 @@ min_out - determine minimum output pixel value. default is 0.
 
 max_out - determine maximum output pixel value. default is 255 * (2 ^ (8 - bits_per_pixel)).
 
-The conversion function is
-.. math::
+The conversion function is::
 
-    output = ((input - min_in) / (max_in - min_in)) ^ (1/gamma) * (max_out - min_out) + min_out
+    output = ((input - min_in) / (max_in - min_in)) ^ (1.0 / gamma) * (max_out - min_out) + min_out
 
 Examples:
 ---------
@@ -142,6 +141,11 @@ Examples:
     >>> clip = core.std.Lut2([edge_h, edge_v], get_lut(16), 0)
     >>> clip = core.neighbors.Invert(clip) # invert edge mask
 
+    - Convert TV levels to PC levels:
+    >>> y = core.neighbors.levels(clip, 16, 236, 1.0, 0, 255, 0)
+    >>> uv = core.neighbors.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
+    >>> clip = core.std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
+
 Note:
 -----
     If input clip has some frames which sample types are float, those will not be processed.
@@ -151,7 +155,7 @@ How to compile:
     on unix like system(include mingw), type as follows::
 
     $ git clone git://github.com/chikuzen/neighbors.git
-    $ cd ./neighbors
+    $ cd ./neighbors/src
     $ ./configure
     $ make install
 

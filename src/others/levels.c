@@ -108,13 +108,15 @@ set_levels_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
     RET_IF_ERROR(!lh, "failed to allocate filter data");
     nh->fdata = lh;
 
-    int bps = nh->vi->format->bitsPerSample;
-    int size = (1 << bps);
-    lh->lut = (uint16_t *)malloc(sizeof(uint16_t) * size);
+    // Is maximum of input really 511/1023 in the case of 9/10 bits ?
+    lh->lut = (uint16_t *)calloc(sizeof(uint16_t),
+                                 1 << (8 * nh->vi->format->bytesPerSample));
     RET_IF_ERROR(!lh->lut, "out of memory");
     nh->free_data = free_levels_data;
 
     int err;
+    int bps = nh->vi->format->bitsPerSample;
+    int size = 1 << bps;
     lh->min_in = (int)vsapi->propGetInt(in, "min_in", 0, &err);
     if (err || lh->min_in < 0) {
         lh->min_in = 0;
