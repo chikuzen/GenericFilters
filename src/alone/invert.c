@@ -35,7 +35,7 @@ invert_get_frame(struct filter_data *fd, const VSFormat *fi,
             continue;
         }
 
-        int plane_size = (vsapi->getStride(src, plane) / sizeof(unsigned)) * 
+        int plane_size = (vsapi->getStride(src, plane) / sizeof(unsigned)) *
                          vsapi->getFrameHeight(src, plane);
         const unsigned *srcp = (unsigned *)vsapi->getReadPtr(src, plane);
         unsigned *dstp = (unsigned *)vsapi->getWritePtr(dst, plane);
@@ -52,7 +52,7 @@ invert_get_frame(struct filter_data *fd, const VSFormat *fi,
         while (usize-- > 1) {
             mask = (mask << 16) | mask;
         }
-        
+
         while (plane_size--) {
             *dstp++ = *srcp++ ^ mask;
         }

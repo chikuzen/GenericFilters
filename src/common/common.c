@@ -138,6 +138,8 @@ static setter_t get_setter(const char *filter_name)
         { "Invert",        { set_invert,         ID_INVERT   } },
         { "Limitter",      { set_limitter,       ID_LIMITTER } },
         { "Levels",        { set_levels,         ID_LEVELS   } },
+        { "Inflate",       { set_xxflate,        ID_INFLATE  } },
+        { "Deflate",       { set_xxflate,        ID_DEFLATE  } },
         { filter_name,     { NULL,               ID_NONE     } }
     };
 
@@ -219,4 +221,8 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "clip:clip;min_in:int[]:opt;max_in:int[]:opt;gamma:float:opt;"
         "min_out:int:opt;max_out:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Levels", plugin);
+    reg("Inflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Inflate", plugin);
+    reg("Deflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Deflate", plugin);
 }

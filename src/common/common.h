@@ -35,7 +35,9 @@ typedef enum {
     ID_MINIMUM,
     ID_INVERT,
     ID_LIMITTER,
-    ID_LEVELS
+    ID_LEVELS,
+    ID_INFLATE,
+    ID_DEFLATE
 } filter_id_t;
 
 
@@ -50,6 +52,7 @@ extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;
 extern const set_filter_data_func set_limitter;
 extern const set_filter_data_func set_levels;
+extern const set_filter_data_func set_xxflate;
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
