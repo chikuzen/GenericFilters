@@ -6,9 +6,11 @@
 #include "VapourSynth.h"
 
 #ifdef _MSC_VER
-#pragma warning(disable:4996)
+#pragma warning(disable:4996 4244)
 #define snprintf _snprintf
 #endif
+
+#define NEIGHBORS_VERSION "0.1.0"
 
 
 typedef struct neighbors_handler neighbors_handler_t;

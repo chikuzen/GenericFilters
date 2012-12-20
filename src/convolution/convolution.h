@@ -27,6 +27,11 @@
 #include <stdint.h>
 #include "VapourSynth.h"
 
+#ifdef _MSV_VER
+#pragma warning(disable: 4244)
+#endif
+
+
 typedef struct filter_data convolution_t;
 
 typedef void (VS_CC *proc_convolution)(convolution_t *, int, int, int,
