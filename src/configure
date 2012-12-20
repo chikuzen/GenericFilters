@@ -68,7 +68,7 @@ LD="gcc"
 STRIP="strip"
 DEBUG=""
 LIBNAME=""
-CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/others"
+CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/alone"
 LDFLAGS="-shared"
 
 echo all command lines: > config.log
@@ -121,16 +121,16 @@ else
 fi
 case "$TARGET_OS" in
     *mingw*)
-        LIBNAME="neighbors.dll"
+        LIBNAME="tweak.dll"
         LDFLAGS="$LDFLAGS -Wl,--dll,--add-stdcall-alias"
         ;;
     *linux*)
-        LIBNAME="libneighbors.so"
+        LIBNAME="libtweak.so"
         CFLAGS="$CFLAGS -fPIC"
         LDFLAGS="-fPIC $LDFLAGS"
         ;;
     *darwin*)
-        LIBNAME="libneighbors.dylib"
+        LIBNAME="libtweak.dylib"
         test -n "$STRIP" && STRIP="$STRIP -x"
         LDFLAGS="$LDFLAGS -dynamiclib -Wl,-undefined,suppress -Wl,-read_only_relocs,suppress -Wl,-flat_namespace"
         echo "The autor has no Mac environment. Thus, this script has not tested. May the force be with you."
@@ -182,7 +182,7 @@ EOF
 cat config.mak >> config.log
 
 test "$SRCDIR" = "." || ln -sf $SRCDIR/GNUmakefile .
-mkdir -p common convolution neighbors others
+mkdir -p common convolution neighbors alone
 
 echo configure finished
 exit 0

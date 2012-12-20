@@ -3,7 +3,7 @@
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Neighbors
+  This file is part of Tweak.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -32,10 +32,10 @@ get_frame_common(int n, int activation_reason, void **instance_data,
                  void **frame_data, VSFrameContext *frame_ctx, VSCore *core,
                  const VSAPI *vsapi)
 {
-    neighbors_handler_t *nh = (neighbors_handler_t *)*instance_data;
+    tweak_handler_t *th = (tweak_handler_t *)*instance_data;
 
     if (activation_reason == arInitial) {
-        vsapi->requestFrameFilter(n, nh->node, frame_ctx);
+        vsapi->requestFrameFilter(n, th->node, frame_ctx);
         return NULL;
     }
 
@@ -43,20 +43,20 @@ get_frame_common(int n, int activation_reason, void **instance_data,
         return NULL;
     }
 
-    const VSFrameRef *src = vsapi->getFrameFilter(n, nh->node, frame_ctx);
+    const VSFrameRef *src = vsapi->getFrameFilter(n, th->node, frame_ctx);
     const VSFormat *fi = vsapi->getFrameFormat(src);
     if (fi->sampleType != stInteger) {
         return src;
     }
     const int pl[] = {0, 1, 2};
-    const VSFrameRef *fr[] = {nh->planes[0] ? NULL : src,
-                              nh->planes[1] ? NULL : src,
-                              nh->planes[2] ? NULL : src};
+    const VSFrameRef *fr[] = {th->planes[0] ? NULL : src,
+                              th->planes[1] ? NULL : src,
+                              th->planes[2] ? NULL : src};
     VSFrameRef *dst = vsapi->newVideoFrame2(fi, vsapi->getFrameWidth(src, 0),
                                             vsapi->getFrameHeight(src, 0),
                                             fr, pl, src, core);
 
-    nh->get_frame_filter(nh->fdata, fi, fr, vsapi, src, dst);
+    th->get_frame_filter(th->fdata, fi, fr, vsapi, src, dst);
 
     vsapi->freeFrame(src);
 
@@ -68,8 +68,8 @@ static void VS_CC
 vs_init(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
         VSCore *core, const VSAPI *vsapi)
 {
-    neighbors_handler_t *nh = (neighbors_handler_t *)*instance_data;
-    vsapi->setVideoInfo(nh->vi, 1, node);
+    tweak_handler_t *th = (tweak_handler_t *)*instance_data;
+    vsapi->setVideoInfo(th->vi, 1, node);
     vsapi->clearMap(in);
 }
 
@@ -77,32 +77,32 @@ vs_init(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
 static void VS_CC
 close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
 {
-    neighbors_handler_t *nh = (neighbors_handler_t *)instance_data;
-    if (!nh) {
+    tweak_handler_t *th = (tweak_handler_t *)instance_data;
+    if (!th) {
         return;
     }
-    if (nh->node) {
-        vsapi->freeNode(nh->node);
-        nh->node = NULL;
+    if (th->node) {
+        vsapi->freeNode(th->node);
+        th->node = NULL;
     }
-    if (nh->fdata) {
-        if (nh->free_data) {
-            nh->free_data(nh->fdata);
+    if (th->fdata) {
+        if (th->free_data) {
+            th->free_data(th->fdata);
         }
-        free(nh->fdata);
-        nh->fdata = NULL;
+        free(th->fdata);
+        th->fdata = NULL;
     }
-    free(nh);
-    nh = NULL;
+    free(th);
+    th = NULL;
 }
 
 
 static int VS_CC
-set_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
+set_planes(tweak_handler_t *th, const VSMap *in, const VSAPI *vsapi)
 {
     int num = vsapi->propNumElements(in, "planes");
     if (num < 1) {
-        for (int i = 0; i < 3; nh->planes[i++] = 1);
+        for (int i = 0; i < 3; th->planes[i++] = 1);
         return 0;
     }
 
@@ -111,7 +111,7 @@ set_planes(neighbors_handler_t *nh, const VSMap *in, const VSAPI *vsapi)
         if (p < 0 || p > 2) {
             return -1;
         }
-        nh->planes[p] = 1;
+        th->planes[p] = 1;
     }
 
     return 0;
@@ -154,7 +154,7 @@ static setter_t get_setter(const char *filter_name)
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
-        close_handler(nh, core, vsapi); \
+        close_handler(th, core, vsapi); \
         snprintf(msg, 240, __VA_ARGS__); \
         vsapi->setError(out, msg_buff); \
         return; \
@@ -170,22 +170,22 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     snprintf(msg_buff, 256, "%s: ", filter_name);
     char *msg = msg_buff + strlen(msg_buff);
 
-    neighbors_handler_t *nh =
-        (neighbors_handler_t *)calloc(sizeof(neighbors_handler_t), 1);
-    RET_IF_ERROR(!nh, "failed to allocate handler");
+    tweak_handler_t *th =
+        (tweak_handler_t *)calloc(sizeof(tweak_handler_t), 1);
+    RET_IF_ERROR(!th, "failed to allocate handler");
 
-    nh->node = vsapi->propGetNode(in, "clip", 0, 0);
-    nh->vi = vsapi->getVideoInfo(nh->node);
-    RET_IF_ERROR(set_planes(nh, in, vsapi), "planes index out of range");
+    th->node = vsapi->propGetNode(in, "clip", 0, 0);
+    th->vi = vsapi->getVideoInfo(th->node);
+    RET_IF_ERROR(set_planes(th, in, vsapi), "planes index out of range");
 
     setter_t setter = get_setter(filter_name);
     RET_IF_ERROR(setter.id == ID_NONE, "initialize failed");
 
-    setter.function(nh, setter.id, msg, in, out, vsapi);
+    setter.function(th, setter.id, msg, in, out, vsapi);
     RET_IF_ERROR(msg[0], " ");
 
     vsapi->createFilter(in, out, filter_name, vs_init, get_frame_common,
-                        close_handler, fmParallel, 0, nh, core);
+                        close_handler, fmParallel, 0, th, core);
 }
 #undef RET_IF_ERROR
 
@@ -194,9 +194,9 @@ VS_EXTERNAL_API(void)
 VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
                       VSPlugin *plugin)
 {
-    conf("chikuzen.does.not.have.his.own.domain.neighbors", "neighbors",
+    conf("chikuzen.does.not.have.his.own.domain.tweak", "tweak",
          "Pixel value modifier with reference to the neighbor pixels v"
-         NEIGHBORS_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
+         TWEAK_PLUGIN_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
     reg("Convolution",
         "clip:clip;matrix:int[]:opt;bias:float:opt;divisor:float:opt;"
         "planes:int[]:opt;mode:data:opt;",

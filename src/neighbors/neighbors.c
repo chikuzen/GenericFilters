@@ -3,7 +3,7 @@
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Neighbors
+  This file is part of Tweak.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -50,25 +50,25 @@ neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
 
 
 static void VS_CC
-set_neighbors_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
+set_neighbors_data(tweak_handler_t *th, filter_id_t id, char *msg,
                    const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    neighbors_t *nb = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
-    RET_IF_ERROR(!nb, "failed to allocate filter data");
-    nh->fdata = nb;
+    neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
+    RET_IF_ERROR(!nh, "failed to allocate filter data");
+    th->fdata = nh;
 
     switch (id) {
     case ID_MAXIMUM:
-        nb->proc_function = maximum;
+        nh->proc_function = maximum;
         break;
     case ID_MEDIAN:
-        nb->proc_function = median;
+        nh->proc_function = median;
         break;
     default:
-        nb->proc_function = minimum;
+        nh->proc_function = minimum;
     }
 
-    nh->get_frame_filter = neighbors_get_frame;
+    th->get_frame_filter = neighbors_get_frame;
 }
 
 

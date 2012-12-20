@@ -3,7 +3,7 @@
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Neighbors
+  This file is part of Tweak
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -26,11 +26,6 @@
 
 
 typedef struct filter_data {
-    int min_in;
-    int max_in;
-    int min_out;
-    int max_out;
-    double gamma;
     void (VS_CC *function)(int, const uint8_t *, uint8_t *, uint16_t *);
     uint16_t *lut;
 } levels_t;
@@ -70,7 +65,8 @@ levels_get_frame(levels_t *lh, const VSFormat *fi, const VSFrameRef **fr,
         lh->function(vsapi->getStride(src, plane) *
                      vsapi->getFrameHeight(src, plane),
                      vsapi->getReadPtr(src, plane),
-                     vsapi->getWritePtr(dst, plane), lh->lut);
+                     vsapi->getWritePtr(dst, plane),
+                     lh->lut);
     }
 }
 
@@ -86,12 +82,13 @@ free_levels_data(void *data)
 }
 
 
-static void VS_CC get_lut(levels_t *lh, int size)
+static void VS_CC
+set_lut(int imin, int imax, int omin, int omax, double gamma, int size,
+        uint16_t *lut)
 {
-    int imin = lh->min_in, omin = lh->min_out, c0 = lh->max_out - lh->min_out;
-    double c1 = 1.0 / (lh->max_in - lh->min_in);
-    double rgamma = 1.0 / lh->gamma;
-    uint16_t *lut = lh->lut;
+    int c0 = omax - omin;
+    double c1 = 1.0 / (imax - imin);
+    double rgamma = 1.0 / gamma;
     for (int pix = 0; pix < size; pix++) {
         lut[pix] = (uint16_t)((int)(pow(((pix - imin) * c1), rgamma) * c0 + 0.5) + omin);
     }
@@ -99,49 +96,49 @@ static void VS_CC get_lut(levels_t *lh, int size)
 
 
 static void VS_CC
-set_levels_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
+set_levels_data(tweak_handler_t *th, filter_id_t id, char *msg,
                 const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    RET_IF_ERROR(nh->vi->format == 0, "format is not constant");
+    RET_IF_ERROR(!th->vi->format, "format is not constant");
 
     levels_t *lh = (levels_t *)calloc(sizeof(levels_t), 1);
     RET_IF_ERROR(!lh, "failed to allocate filter data");
-    nh->fdata = lh;
+    th->fdata = lh;
 
     // Is maximum of input really 511/1023 in the case of 9/10 bits ?
     lh->lut = (uint16_t *)calloc(sizeof(uint16_t),
-                                 1 << (8 * nh->vi->format->bytesPerSample));
+                                 1 << (8 * th->vi->format->bytesPerSample));
     RET_IF_ERROR(!lh->lut, "out of memory");
-    nh->free_data = free_levels_data;
+    th->free_data = free_levels_data;
 
     int err;
-    int bps = nh->vi->format->bitsPerSample;
+    int bps = th->vi->format->bitsPerSample;
     int size = 1 << bps;
-    lh->min_in = (int)vsapi->propGetInt(in, "min_in", 0, &err);
-    if (err || lh->min_in < 0) {
-        lh->min_in = 0;
+    int imin = (int)vsapi->propGetInt(in, "min_in", 0, &err);
+    if (err || imin < 0) {
+        imin = 0;
     }
-    lh->max_in = (int)vsapi->propGetInt(in, "max_in", 0, &err);
-    if (err || lh->max_in > size - 1) {
-        lh->max_in = 0xFF << (bps - 8);
+    int imax = (int)vsapi->propGetInt(in, "max_in", 0, &err);
+    if (err || imax > size - 1) {
+        imax = 0xFF << (bps - 8);
     }
-    lh->min_out = (int)vsapi->propGetInt(in, "min_out", 0, &err);
-    if (err || lh->min_out < 0) {
-        lh->min_out = 0;
+    int omin = (int)vsapi->propGetInt(in, "min_out", 0, &err);
+    if (err || omin < 0) {
+        omin = 0;
     }
-    lh->max_out = (int)vsapi->propGetInt(in, "max_out", 0, &err);
-    if (err || lh->max_out > size - 1) {
-        lh->max_out = 0xFF << (bps - 8);
+    int omax = (int)vsapi->propGetInt(in, "max_out", 0, &err);
+    if (err || omax > size - 1) {
+        omax = 0xFF << (bps - 8);
     }
-    lh->gamma = vsapi->propGetFloat(in, "gamma", 0, &err);
-    if (err || lh->gamma <= 0.0f) {
-        lh->gamma = 1.0;
+    double gamma = vsapi->propGetFloat(in, "gamma", 0, &err);
+    if (err || gamma <= 0.0f) {
+        gamma = 1.0;
     }
 
-    get_lut(lh, size);
+    set_lut(imin, imax, omin, omax, gamma, size, lh->lut);
 
     lh->function = bps > 8 ? proc_16bit : proc_8bit;
-    nh->get_frame_filter = levels_get_frame;
+    th->get_frame_filter = levels_get_frame;
 }
 
 

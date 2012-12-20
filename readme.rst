@@ -1,10 +1,10 @@
-===============================
-Neighbors - VapourSynth plugin
-===============================
+==========================
+Tweak - VapourSynth plugin
+==========================
 
-This plugin modifies all pixel values with reference to the neighbors of them.
+This plugin modifies all pixel values various algorithm.
 
-Currentry, Neighbors has six functions as follows.
+Currentry, Tweak has eight functions as follows.
 
 All functions are supported 8/9/10/16bit planar formats.
 
@@ -12,7 +12,7 @@ Minimum:
 --------
 Replaces the pixel by the local(3x3) minimum.::
 
-    neighbors.Minimum(clip clip[, int[] planes])
+    tweak.Minimum(clip clip[, int[] planes])
 
 planes - planes which processes. default will process all planes.
 
@@ -20,7 +20,7 @@ Maximum:
 --------
 Replaces the pixel by the local(3x3) maximum.::
 
-    neighbors.Maximum(clip clip[, int[] planes])
+    tweak.Maximum(clip clip[, int[] planes])
 
 planes - same as Minimum.
 
@@ -28,7 +28,7 @@ Median:
 -------
 Replaces the pixel by the local(3x3) median.::
 
-    neighbors.Median(clip clip[, int[] planes])
+    tweak.Median(clip clip[, int[] planes])
 
 planes - same as Minimum.
 
@@ -36,7 +36,7 @@ Convolution:
 ------------
 General spatial convolution (horizontal/vertiac 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
 
-    neighbors.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
+    tweak.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
 
 matrix - can be a matrix with 3, 5, 9 or 25 integer numbers. default is [0, 0, 0, 0, 1, 0, 0, 0, 0].
 
@@ -52,7 +52,7 @@ ConvolutionHV:
 --------------
 It performs vertical 5 convolution first and then performs horizontal 5 convolution (faster than 5x5 convolution).::
 
-    neighbors.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
+    tweak.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
 
 horizontal - horizontal matrix. the length must be five. default is [0, 0, 1, 0, 0].
 
@@ -70,7 +70,7 @@ Invert:
 -------
 Invert the pixel value.::
 
-    neignbors.Invert(clip clip[, int[] planes])
+    tweak.Invert(clip clip[, int[] planes])
 
 planes - same as Minimum.
 
@@ -78,7 +78,7 @@ Limitter:
 ---------
 Clamp the pixel value.::
 
-    neighbors.Limitter(clip clip[, int min, int max, int[] planes])
+    tweak.Limitter(clip clip[, int min, int max, int[] planes])
 
 min - minimum threshold of pixel value. default is 0.
 
@@ -90,7 +90,7 @@ Levels:
 -------
 Adjusts brightness, contrast, and gamma.::
 
-    neighbors.Levels(clip clip[, int min_in, int max_in, float gamma, int min_out, int max_out])
+    tweak.Levels(clip clip[, int min_in, int max_in, float gamma, int min_out, int max_out])
 
 min_in - determine minimum input pixel value. default is 0.
 
@@ -110,18 +110,18 @@ Examples:
 ---------
     >>> import vapoursynth as vs
     >>> core = vs.Core()
-    >>> core.std.LoadPlugin('/path/to/neighbors.dll')
+    >>> core.std.LoadPlugin('/path/to/tweak.dll')
     >>> clip = something
 
     - blur(5x5) only Y(or R) plane:
     >>> matrix = [10, 10, 16, 10, 10]
-    >>> blured = core.neighbors.ConvolutionHV(clip, matrix, matrix, planes=0)
+    >>> blured = core.tweak.ConvolutionHV(clip, matrix, matrix, planes=0)
 
     - Displacement UV(or GB) planes by quarter sample up:
     >>> matrix = [1,
                   3,
                   0]
-    >>> clip = core.convo2d.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
+    >>> clip = core.tweak.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
 
     - Edge detection with Sobel operator:
     >>> import math
@@ -136,14 +136,14 @@ Examples:
     ...     return lut
     ...
     >>> clip = core.resize.Point(clip, format=vs.GRAY8)
-    >>> edge_h = core.neighbors.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
-    >>> edge_v = core.neighbors.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
+    >>> edge_h = core.tweak.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
+    >>> edge_v = core.tweak.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
     >>> clip = core.std.Lut2([edge_h, edge_v], get_lut(16), 0)
-    >>> clip = core.neighbors.Invert(clip) # invert edge mask
+    >>> clip = core.tweak.Invert(clip) # invert edge mask
 
     - Convert TV levels to PC levels:
-    >>> y = core.neighbors.levels(clip, 16, 236, 1.0, 0, 255, 0)
-    >>> uv = core.neighbors.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
+    >>> y = core.tweak.levels(clip, 16, 236, 1.0, 0, 255, 0)
+    >>> uv = core.tweak.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
     >>> clip = core.std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
 
 Note:
@@ -154,8 +154,8 @@ How to compile:
 ---------------
     on unix like system(include mingw), type as follows::
 
-    $ git clone git://github.com/chikuzen/neighbors.git
-    $ cd ./neighbors/src
+    $ git clone git://github.com/chikuzen/tweak.git
+    $ cd ./tweak/src
     $ ./configure
     $ make install
 

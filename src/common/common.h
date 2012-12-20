@@ -1,5 +1,5 @@
-#ifndef NEIGHBORS_COMMON_H
-#define NEIGHBORS_COMMON_H
+#ifndef TWEAK_COMMON_H
+#define TWEAK_COMMON_H
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -10,12 +10,12 @@
 #define snprintf _snprintf
 #endif
 
-#define NEIGHBORS_VERSION "0.1.0"
+#define TWEAK_PLUGIN_VERSION "0.1.0"
 
 
-typedef struct neighbors_handler neighbors_handler_t;
+typedef struct tweak_handler tweak_handler_t;
 
-struct neighbors_handler {
+struct tweak_handler {
     VSNodeRef *node;
     const VSVideoInfo *vi;
     int planes[3];
@@ -39,7 +39,7 @@ typedef enum {
 } filter_id_t;
 
 
-typedef void (VS_CC *set_filter_data_func)(neighbors_handler_t *nh,
+typedef void (VS_CC *set_filter_data_func)(tweak_handler_t *th,
                                             filter_id_t id, char *msg,
                                             const VSMap *in, VSMap *out,
                                             const VSAPI *vsapi);

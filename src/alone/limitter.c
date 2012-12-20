@@ -3,7 +3,7 @@
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Neighbors
+  This file is part of Tweak.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -109,12 +109,12 @@ limitter_get_frame(limitter_t *lh, const VSFormat *fi, const VSFrameRef **fr,
 
 
 static void VS_CC
-set_limitter_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
+set_limitter_data(tweak_handler_t *th, filter_id_t id, char *msg,
                   const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
     limitter_t *lh = (limitter_t *)calloc(sizeof(limitter_t), 1);
     RET_IF_ERROR(!lh, "failed to allocate filter data");
-    nh->fdata = lh;
+    th->fdata = lh;
 
     int err;
     lh->th_min = (int)vsapi->propGetInt(in, "min", 0, &err);
@@ -130,7 +130,7 @@ set_limitter_data(neighbors_handler_t *nh, filter_id_t id, char *msg,
     lh->function[0] = proc_8bit;
     lh->function[1] = proc_16bit;
 
-    nh->get_frame_filter = limitter_get_frame;
+    th->get_frame_filter = limitter_get_frame;
 }
 
 
