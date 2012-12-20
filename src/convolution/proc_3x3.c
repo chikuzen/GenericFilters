@@ -21,8 +21,8 @@
 */
 
 
-#define PROC_CONVOLUTION
 #include "convolution.h"
+#include "convo_helper.h"
 
 
 static void VS_CC

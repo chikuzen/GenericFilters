@@ -22,8 +22,6 @@
 
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "common.h"
 #include "convolution.h"
@@ -35,6 +33,7 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
                       const VSFrameRef *src, VSFrameRef *dst)
 {
     uint16_t max = (1 << fi->bitsPerSample) - 1;
+    int index = fi->bytesPerSample - 1;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
@@ -42,112 +41,73 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
 
         int width = vsapi->getFrameWidth(src, plane);
         if (width < 2 &&
-            ch->proc_function != convo_v3 &&
-            ch->proc_function != convo_v5) {
+            ch->function != convo_v3 && ch->function != convo_v5) {
             continue;
         }
-        if (width < 4) {
-            if (ch->proc_function == convo_h5 ||
-                ch->proc_function == convo_hv5 ||
-                ch->proc_function == convo_5x5) {
-                continue;
-            }
+        if (width < 4 &&
+           (ch->function == convo_h5 || ch->function == convo_5x5)) {
+            continue;
         }
 
         int height = vsapi->getFrameHeight(src, plane);
         if (height < 2 &&
-            ch->proc_function != convo_h3 &&
-            ch->proc_function != convo_h5) {
+            ch->function != convo_h3 &&
+            ch->function != convo_h5) {
             continue;
         }
-        if (height < 4) {
-            if (ch->proc_function == convo_v5 ||
-                ch->proc_function == convo_hv5 ||
-                ch->proc_function == convo_5x5) {
-                continue;
-            }
+        if (height < 4 &&
+            (ch->function == convo_v5 || ch->function == convo_5x5)) {
+            continue;
         }
 
-        int stride = vsapi->getStride(src, plane);
-        uint8_t * dstp = vsapi->getWritePtr(dst, plane);
-        const uint8_t *srcp = vsapi->getReadPtr(src, plane);
-
-        ch->proc_function[fi->bytesPerSample - 1](ch, width, height, stride,
-                                                  dstp, srcp, max);
+        ch->function[index](ch, width, height,
+                            vsapi->getStride(src, plane),
+                            vsapi->getWritePtr(dst, plane),
+                            vsapi->getReadPtr(src, plane),
+                            max);
     }
 }
 
 
 static void VS_CC
-set_matrix_and_proc_function(convolution_t *ch, filter_id_t id, const VSMap *in,
+set_matrix_and_proc_function(convolution_t *ch, const VSMap *in,
                              const VSAPI *vsapi, char *msg)
 {
-    const char *param = id == ID_CONVO_HV ? "horizontal" : "matrix";
-    int num = vsapi->propNumElements(in, param);
-    RET_IF_ERROR((id == ID_CONVO_HV && num > 0 && num != 5) ||
-                 (num > 0 && num != 3 && num != 5 && num != 9 && num != 25),
-                 "invalid %s", param);
+    int num = vsapi->propNumElements(in, "matirx");
+    RET_IF_ERROR(num > 0 && num != 3 && num != 5 && num != 9 && num != 25,
+                 "invalid matrix");
 
-    int err;
     switch (num) {
     case 3:
-        ch->proc_function = convo_h3;
-        param = vsapi->propGetData(in, "mode", 0, &err);
-        if (!err && param[0] == 'v') {
-            ch->proc_function = convo_v3;
-        }
+        ch->function = convo_h3;
         break;
     case 5:
-        ch->proc_function = convo_hv5;
-        if (id == ID_CONVO) {
-            ch->proc_function = convo_h5;
-            param = vsapi->propGetData(in, "mode", 0, &err);
-            if (!err && param[0] == 'v') {
-                ch->proc_function = convo_v5;
-            }
-        }
+        ch->function = convo_h5;
         break;
     case 25:
-        ch->proc_function = convo_5x5;
+        ch->function = convo_5x5;
         break;
     default:
-        ch->proc_function = id == ID_CONVO_HV ? convo_hv5 : convo_3x3;
+        ch->function = convo_3x3;
     }
 
-    ch->m[4] = ch->m_v[1] = 1;
-    param = "matrix";
-    if (id == ID_CONVO_HV) {
-        ch->m[2] = 1;
-        param = "horizontal";
+    int err;
+    const char *mode = vsapi->propGetData(in, "mode", 0, &err);
+    if (!err && mode[0] == 'v' && (num == 3 || num == 5)) {
+        ch->function = num == 3 ? convo_v3 : convo_v5;
     }
 
+    ch->m[4] = 1;
     for (int i = 0; i < num; i++) {
-        int element = (int)vsapi->propGetInt(in, param, i, NULL);
+        int element = (int)vsapi->propGetInt(in, "matrix", i, NULL);
         RET_IF_ERROR(element < -32768 || element > 32767,
-                     "%s has out of range value", param);
+                     "matrix has out of range value");
         ch->m[i] = element;
         ch->rdiv += element;
     }
+
     if (ch->rdiv == 0.0) {
         ch->rdiv = 1.0;
-    }
-
-    if (id == ID_CONVO) {
-        return;
-    }
-
-    num = vsapi->propNumElements(in, "vertical");
-    RET_IF_ERROR(num > 0 && num != 5, "invalid vertical");
-    ch->m_v[2] = 1;
-    for (int i = 0; i < num; i++) {
-        int element = (int)vsapi->propGetInt(in, "vertical", i, NULL);
-        RET_IF_ERROR(element < -32768 || element >32767,
-                     "vertical has out of range value");
-        ch->m_v[i] = element;
-        ch->rdiv_v += element;
-    }
-    if (ch->rdiv_v == 0.0) {
-        ch->rdiv_v = 1.0;
     }
 }
 
@@ -160,7 +120,7 @@ set_convolution_data(tweak_handler_t *th, filter_id_t id, char *msg,
     RET_IF_ERROR(!ch, "failed to allocate filter data");
     th->fdata = ch;
 
-    set_matrix_and_proc_function(ch, id, in, vsapi, msg);
+    set_matrix_and_proc_function(ch, in, vsapi, msg);
     RET_IF_ERROR(msg[0], " ");
 
     int err;
@@ -169,24 +129,14 @@ set_convolution_data(tweak_handler_t *th, filter_id_t id, char *msg,
         ch->bias = 0.0;
     }
 
-    double div = vsapi->propGetFloat(
-        in, id == ID_CONVO_HV ? "divisor_h" : "divisor", 0, &err);
+    double div = vsapi->propGetFloat(in, "divisor", 0, &err);
     if (!err && div != 0.0) {
         ch->rdiv = div;
     }
     ch->rdiv = 1.0 / ch->rdiv;
 
-    if (id == ID_CONVO_HV) {
-        div = vsapi->propGetFloat(in, "divisor_v", 0, &err);
-        if (!err && div != 0.0) {
-            ch->rdiv_v = div;
-        }
-        ch->rdiv_v = 1.0 / ch->rdiv_v;
-    }
-
     th->get_frame_filter = convolution_get_frame;
 }
-#undef RET_IF_ERROR
 
 
 const set_filter_data_func set_convolution = set_convolution_data;

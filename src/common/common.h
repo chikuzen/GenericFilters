@@ -45,6 +45,7 @@ typedef void (VS_CC *set_filter_data_func)(tweak_handler_t *th,
                                             const VSAPI *vsapi);
 
 extern const set_filter_data_func set_convolution;
+extern const set_filter_data_func set_convolution_hv;
 extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;
 extern const set_filter_data_func set_limitter;

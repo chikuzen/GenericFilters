@@ -130,15 +130,15 @@ static setter_t get_setter(const char *filter_name)
         const char *name;
         setter_t setter;
     } table[] = {
-        { "Convolution",   { set_convolution, ID_CONVO    } },
-        { "ConvolutionHV", { set_convolution, ID_CONVO_HV } },
-        { "Maximum",       { set_neighbors,   ID_MAXIMUM  } },
-        { "Median",        { set_neighbors,   ID_MEDIAN   } },
-        { "Minimum",       { set_neighbors,   ID_MINIMUM  } },
-        { "Invert",        { set_invert,      ID_INVERT   } },
-        { "Limitter",      { set_limitter,    ID_LIMITTER } },
-        { "Levels",        { set_levels,      ID_LEVELS   } },
-        { filter_name,     { NULL,            ID_NONE     } }
+        { "Convolution",   { set_convolution,    ID_CONVO    } },
+        { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
+        { "Maximum",       { set_neighbors,      ID_MAXIMUM  } },
+        { "Median",        { set_neighbors,      ID_MEDIAN   } },
+        { "Minimum",       { set_neighbors,      ID_MINIMUM  } },
+        { "Invert",        { set_invert,         ID_INVERT   } },
+        { "Limitter",      { set_limitter,       ID_LIMITTER } },
+        { "Levels",        { set_levels,         ID_LEVELS   } },
+        { filter_name,     { NULL,               ID_NONE     } }
     };
 
     int i = 0;

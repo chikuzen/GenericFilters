@@ -1,5 +1,5 @@
 /*
-  convolution.h: Copyright (C) 2012  Oka Motofumi
+  convo_helper.h: Copyright (C) 2012  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
@@ -21,32 +21,34 @@
 */
 
 
-#ifndef CONVOLUTION_FILTER_HEADER
-#define CONVOLUTION_FILTER_HEADER
+#ifndef CONVOLUTION_HELPER_HEADER
+#define CONVOLUTION_HELPER_HEADER
 
 #include <stdint.h>
 #include "VapourSynth.h"
 
 
-typedef struct filter_data convolution_t;
-
-typedef void (VS_CC *proc_convolution)(convolution_t *, int, int, int,
-                                        uint8_t *, const uint8_t *, uint16_t);
-
-struct filter_data {
-    int m[25];
-    double rdiv;
-    double bias;
-    const proc_convolution *function;
-};
-
-
-extern const proc_convolution convo_h3[];
-extern const proc_convolution convo_h5[];
-extern const proc_convolution convo_v3[];
-extern const proc_convolution convo_v5[];
-extern const proc_convolution convo_3x3[];
-extern const proc_convolution convo_5x5[];
+static inline uint16_t VS_CC clamp_f(float val, uint16_t max)
+{
+    if (val < 1.0) {
+        return 0;
+    }
+    if (val > max) {
+        return max;
+    }
+    return (uint16_t)val;
+}
 
 
-#endif // CONVOLUTION_FILTER_HEADER
+static inline uint16_t VS_CC clamp_d(double val, uint16_t max)
+{
+    if (val < 0.0) {
+        return 0;
+    }
+    if (val > max) {
+        return max;
+    }
+    return (uint16_t)val;
+}
+
+#endif

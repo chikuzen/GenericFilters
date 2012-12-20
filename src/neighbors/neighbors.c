@@ -33,18 +33,17 @@ static void VS_CC
 neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
                     const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
 {
+    int index = fi->bytesPerSample - 1;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
         }
-        
-        int w = vsapi->getFrameWidth(src, plane) - 1;
-        int h = vsapi->getFrameHeight(src, plane) - 1;
-        int stride = vsapi->getStride(src, plane);
 
-        uint8_t *dstp = vsapi->getWritePtr(dst, plane);
-        const uint8_t *srcp = vsapi->getReadPtr(src, plane);
-        nh->proc_function[fi->bytesPerSample - 1](w, h, stride, dstp, srcp);
+        nh->function[index](vsapi->getFrameWidth(src, plane) - 1,
+                            vsapi->getFrameHeight(src, plane) - 1,
+                            vsapi->getStride(src, plane),
+                            vsapi->getWritePtr(dst, plane),
+                            vsapi->getReadPtr(src, plane));
     }
 }
 
@@ -59,13 +58,13 @@ set_neighbors_data(tweak_handler_t *th, filter_id_t id, char *msg,
 
     switch (id) {
     case ID_MAXIMUM:
-        nh->proc_function = maximum;
+        nh->function = maximum;
         break;
     case ID_MEDIAN:
-        nh->proc_function = median;
+        nh->function = median;
         break;
     default:
-        nh->proc_function = minimum;
+        nh->function = minimum;
     }
 
     th->get_frame_filter = neighbors_get_frame;

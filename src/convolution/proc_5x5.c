@@ -21,8 +21,9 @@
 */
 
 
-#define PROC_CONVOLUTION
 #include "convolution.h"
+#include "convo_helper.h"
+
 
 #define SET_MATRIX() \
     int m00 = ch->m[ 0], m01 = ch->m[ 1], m02 = ch->m[ 2], m03 = ch->m[ 3], m04 = ch->m[ 4],\
