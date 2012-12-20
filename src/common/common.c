@@ -86,6 +86,9 @@ close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
         nh->node = NULL;
     }
     if (nh->fdata) {
+        if (nh->free_data) {
+            nh->free_data(nh->fdata);
+        }
         free(nh->fdata);
         nh->fdata = NULL;
     }
@@ -134,6 +137,7 @@ static setter_t get_setter(const char *filter_name)
         { "Minimum",       { set_neighbors,   ID_MINIMUM  } },
         { "Invert",        { set_invert,      ID_INVERT   } },
         { "Limitter",      { set_limitter,    ID_LIMITTER } },
+        { "Levels",        { set_levels,      ID_LEVELS   } },
         { filter_name,     { NULL,            ID_NONE     } }
     };
 
@@ -159,7 +163,7 @@ static setter_t get_setter(const char *filter_name)
 
 static void VS_CC
 create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
-                   const VSAPI *vsapi)
+                     const VSAPI *vsapi)
 {
     const char *filter_name = (char *)user_data;
     char msg_buff[256] = { 0 };
@@ -211,4 +215,8 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Invert", plugin);
     reg("Limitter", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Limitter", plugin);
+    reg("Levels",
+        "clip:clip;min_in:int[]:opt;max_in:int[]:opt;gamma:float:opt;"
+        "min_out:int:opt;max_out:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Levels", plugin);
 }

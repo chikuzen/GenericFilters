@@ -1,5 +1,5 @@
 /*
-  invert.c: Copyright (C) 2012  Oka Motofumi
+  limitter.c: Copyright (C) 2012  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 

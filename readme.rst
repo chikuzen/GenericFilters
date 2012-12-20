@@ -6,7 +6,7 @@ This plugin modifies all pixel values with reference to the neighbors of them.
 
 Currentry, Neighbors has six functions as follows.
 
-All functions are supported 8/9/10/16bit planar not constant formats.
+All functions are supported 8/9/10/16bit planar formats.
 
 Minimum:
 --------
@@ -85,6 +85,27 @@ min - minimum threshold of pixel value. default is 0.
 max - maximum threshold of the pixel value. default is 65535.
 
 planes - same as Minimum.
+
+Levels:
+-------
+Adjusts brightness, contrast, and gamma.::
+
+    neighbors.Levels(clip clip[, int min_in, int max_in, float gamma, int min_out, int max_out])
+
+min_in - determine minimum input pixel value. default is 0.
+
+max_in - determine maximum input pixel value. default is 255 * (2 ^ (8 - bits_per_pixel)).
+
+gamma - gamma. default is 1.0.
+
+min_out - determine minimum output pixel value. default is 0.
+
+max_out - determine maximum output pixel value. default is 255 * (2 ^ (8 - bits_per_pixel)).
+
+The conversion function is
+.. math::
+
+    output = ((input - min_in) / (max_in - min_in)) ^ (1/gamma) * (max_out - min_out) + min_out
 
 Examples:
 ---------

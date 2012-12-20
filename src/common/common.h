@@ -20,6 +20,7 @@ struct neighbors_handler {
     const VSVideoInfo *vi;
     int planes[3];
     struct filter_data *fdata;
+    void (VS_CC *free_data)(void *);
     void (VS_CC *get_frame_filter)(struct filter_data *, const VSFormat *,
                                    const VSFrameRef **, const VSAPI *,
                                    const VSFrameRef *, VSFrameRef *);
@@ -34,6 +35,7 @@ typedef enum {
     ID_MINIMUM,
     ID_INVERT,
     ID_LIMITTER,
+    ID_LEVELS
 } filter_id_t;
 
 
@@ -46,6 +48,7 @@ extern const set_filter_data_func set_convolution;
 extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;
 extern const set_filter_data_func set_limitter;
+extern const set_filter_data_func set_levels;
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
