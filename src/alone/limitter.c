@@ -20,91 +20,19 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <stdlib.h>
-#include "common.h"
 
-typedef void (VS_CC *proc_limitter)(int, int, int, const uint8_t *, uint8_t *,
-                                    uint16_t, uint16_t);
-
-typedef struct filter_data {
-    proc_limitter function[2];
-    int th_min;
-    int th_max;
-} limitter_t;
+#include "alone.h"
 
 
-static void VS_CC
-proc_8bit(int width, int height, int stride, const uint8_t *srcp, uint8_t *dstp,
-          uint16_t th_min, uint16_t th_max)
+static void VS_CC set_lut(alone_t *ah, int min, int max)
 {
-    uint8_t min = th_min > 0x00FF ? 0xFF : th_min;
-    uint8_t max = th_max > 0x00FF ? 0xFF : th_max;
+    uint16_t *lut = ah->lut;
+    size_t size = ah->lut_size;
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            uint8_t val = srcp[x];
-            if (val < min) {
-                dstp[x] = min;
-                continue;
-            }
-            if (val > max) {
-                dstp[x] = max;
-                continue;
-            }
-            dstp[x] = val;
-        }
-        srcp += stride;
-        dstp += stride;
-    }
-}
-
-
-static void VS_CC
-proc_16bit(int width, int height, int stride, const uint8_t *s, uint8_t *d,
-           uint16_t min, uint16_t max)
-{
-    uint16_t *dstp = (uint16_t *)d;
-    const uint16_t *srcp = (uint16_t *)s;
-    stride >>= 1;
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            uint16_t val = srcp[x];
-            if (val < min) {
-                dstp[x] = min;
-                continue;
-            }
-            if (val > max) {
-                dstp[x] = max;
-                continue;
-            }
-            dstp[x] = val;
-        }
-        srcp += stride;
-        dstp += stride;
-    }
-}
-
-
-static void VS_CC
-limitter_get_frame(limitter_t *lh, const VSFormat *fi, const VSFrameRef **fr,
-                   const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
-{
-    uint16_t min = lh->th_min;
-    uint16_t max = lh->th_max;
-
-    for (int plane = 0; plane < fi->numPlanes; plane++) {
-        if (fr[plane]) {
-            continue;
-        }
-
-        lh->function[fi->bytesPerSample - 1](vsapi->getFrameWidth(src, plane),
-                                             vsapi->getFrameHeight(src, plane),
-                                             vsapi->getStride(src, plane),
-                                             vsapi->getReadPtr(src, plane),
-                                             vsapi->getWritePtr(dst, plane),
-                                             min, max);
-    }
+    int i = 0;
+    while (i < min) lut[i++] = min;
+    for (; i < max; i++) lut[i] = i;
+    while (i < size) lut[i++] = max;
 }
 
 
@@ -112,25 +40,28 @@ static void VS_CC
 set_limitter_data(tweak_handler_t *th, filter_id_t id, char *msg,
                   const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    limitter_t *lh = (limitter_t *)calloc(sizeof(limitter_t), 1);
-    RET_IF_ERROR(!lh, "failed to allocate filter data");
-    th->fdata = lh;
+    RET_IF_ERROR(!th->vi->format, "format is not constant");
 
     int err;
-    lh->th_min = (int)vsapi->propGetInt(in, "min", 0, &err);
-    if (err || lh->th_min < 0) {
-        lh->th_min = 0;
-    }
-    lh->th_max = (int)vsapi->propGetInt(in, "max", 0, &err);
-    if (err || lh->th_max > 0xFFFF) {
-        lh->th_min = 0xFFFF;
-    }
-    RET_IF_ERROR(lh->th_min > lh->th_max, "min is larger than max");
 
-    lh->function[0] = proc_8bit;
-    lh->function[1] = proc_16bit;
+    int th_min = (int)vsapi->propGetInt(in, "min", 0, &err);
+    if (err || th_min < 0) {
+        th_min = 0;
+    }
 
-    th->get_frame_filter = limitter_get_frame;
+    int max = (1 << th->vi->format->bitsPerSample) - 1;
+    int th_max = (int)vsapi->propGetInt(in, "max", 0, &err);
+    if (err || th_max > max) {
+        th_max = max;
+    }
+
+    RET_IF_ERROR(th_min > th_max, "min is larger than max");
+
+    const char *ret = set_alone(th);
+    RET_IF_ERROR(ret, "%s", ret);
+    alone_t *ah = (alone_t *)th->fdata;
+
+    set_lut(ah, th_min, th_max);
 }
 
 

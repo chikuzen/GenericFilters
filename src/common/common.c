@@ -182,7 +182,6 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 
     setter_t setter = get_setter(filter_name);
     RET_IF_ERROR(setter.id == ID_NONE, "initialize failed");
-
     setter.function(th, setter.id, msg, in, out, vsapi);
     RET_IF_ERROR(msg[0], " ");
 
@@ -215,7 +214,8 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Median", plugin);
     reg("Invert", "clip:clip;planes:int[]:opt;",
         create_filter_common, (void *)"Invert", plugin);
-    reg("Limitter", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+    reg("Limitter",
+        "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Limitter", plugin);
     reg("Levels",
         "clip:clip;min_in:int[]:opt;max_in:int[]:opt;gamma:float:opt;"
