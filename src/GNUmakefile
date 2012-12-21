@@ -8,8 +8,8 @@ SRCS = convolution/convolution.c convolution/proc_3x3.c convolution/proc_5x5.c \
        convolution/proc_hv.c     convolution/xxflate.c  convolution/inflate.c \
        convolution/deflate.c     neighbors/maximum.c    neighbors/median.c \
        neighbors/minimum.c       neighbors/neighbors.c  alone/invert.c \
-       alone/limitter.c          alone/levels.c         alone/alone.c \
-       common/common.c
+       alone/limitter.c          alone/levels.c         alone/binarize.c \
+       alone/alone.c             common/common.c
 
 OBJS = $(SRCS:%.c=%.o)
 

@@ -24,47 +24,45 @@
 #include "xxflate.h"
 
 
-#define cond_add(cond, num) {\
-    if (th > cond) { \
-        value += cond * num; \
+#define cond_add(pix, center, num) {\
+    if (center > pix && pix >= thresh) { \
+        value += pix * num; \
         div += num;\
     } \
 }
 
 static void VS_CC
-proc_8bit(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1, int th)
+proc_8bit(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1, int thresh)
 {
     for (int y = 0; y <= h; y++) {
         const uint8_t *r0 = r1 - stride * !!y;
         const uint8_t *r2 = r1 + stride * !!(h - y);
         int value = r1[0], div = 1;
-        cond_add(r0[0], 2);
-        cond_add(r0[1], 1);
-        cond_add(r1[0], 1);
-        cond_add(r1[1], 1);
-        cond_add(r2[0], 2);
-        cond_add(r2[1], 1);
-        dstp[0] = (double)value / div;
+        cond_add(r0[0], r1[0], 2);
+        cond_add(r0[1], r1[0], 1);
+        cond_add(r1[1], r1[0], 1);
+        cond_add(r2[0], r1[0], 2);
+        cond_add(r2[1], r1[0], 1);
+        dstp[0] = (float)value / div;
         for (int x = 1; x < w; x++) {
             value = r1[x]; div = 1;
-            cond_add(r0[x - 1], 1);
-            cond_add(r0[x], 1);
-            cond_add(r0[x + 1], 1);
-            cond_add(r1[x - 1], 1);
-            cond_add(r1[x + 1], 1);
-            cond_add(r2[x - 1], 1);
-            cond_add(r2[x], 1);
-            cond_add(r2[x + 1], 1);
-            dstp[x] = (double)value / div;
+            cond_add(r0[x - 1], r1[x], 1);
+            cond_add(r0[  x  ], r1[x], 1);
+            cond_add(r0[x + 1], r1[x], 1);
+            cond_add(r1[x - 1], r1[x], 1);
+            cond_add(r1[x + 1], r1[x], 1);
+            cond_add(r2[x - 1], r1[x], 1);
+            cond_add(r2[  x  ], r1[x], 1);
+            cond_add(r2[x + 1], r1[x], 1);
+            dstp[x] = (float)value / div;
         }
         value = r1[w]; div = 1;
-        cond_add(r0[w - 1], 1);
-        cond_add(r0[w], 2);
-        cond_add(r1[w - 1], 1);
-        cond_add(r1[w], 1);
-        cond_add(r2[w - 1], 1);
-        cond_add(r2[w], 2);
-        dstp[w] = (double)value / div;
+        cond_add(r0[w - 1], r1[w], 1);
+        cond_add(r0[  w  ], r1[w], 2);
+        cond_add(r1[w - 1], r1[w], 1);
+        cond_add(r2[w - 1], r1[w], 1);
+        cond_add(r2[  w  ], r1[w], 2);
+        dstp[w] = (float)value / div;
         r1 += stride;
         dstp += stride;
     }
@@ -72,7 +70,7 @@ proc_8bit(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1, int th)
 
 
 static void VS_CC
-proc_16bit(int w, int h, int stride, uint8_t *d, const uint8_t *srcp, int th)
+proc_16bit(int w, int h, int stride, uint8_t *d, const uint8_t *srcp, int thresh)
 {
     stride >>= 1;
     uint8_t *dstp = (uint8_t *)d;
@@ -82,32 +80,30 @@ proc_16bit(int w, int h, int stride, uint8_t *d, const uint8_t *srcp, int th)
         const uint16_t *r0 = r1 - stride * !!y;
         const uint16_t *r2 = r1 + stride * !!(h - y);
         int value = r1[0], div = 1;
-        cond_add(r0[0], 2);
-        cond_add(r0[1], 1);
-        cond_add(r1[0], 1);
-        cond_add(r1[1], 1);
-        cond_add(r2[0], 2);
-        cond_add(r2[1], 1);
+        cond_add(r0[0], r1[0], 2);
+        cond_add(r0[1], r1[0], 1);
+        cond_add(r1[1], r1[0], 1);
+        cond_add(r2[0], r1[0], 2);
+        cond_add(r2[1], r1[0], 1);
         dstp[0] = (double)value / div;
         for (int x = 1; x < w; x++) {
             value = r1[x]; div = 1;
-            cond_add(r0[x - 1], 1);
-            cond_add(r0[x], 1);
-            cond_add(r0[x + 1], 1);
-            cond_add(r1[x - 1], 1);
-            cond_add(r1[x + 1], 1);
-            cond_add(r2[x - 1], 1);
-            cond_add(r2[x], 1);
-            cond_add(r2[x + 1], 1);
+            cond_add(r0[x - 1], r1[x], 1);
+            cond_add(r0[  x  ], r1[x], 1);
+            cond_add(r0[x + 1], r1[x], 1);
+            cond_add(r1[x - 1], r1[x], 1);
+            cond_add(r1[x + 1], r1[x], 1);
+            cond_add(r2[x - 1], r1[x], 1);
+            cond_add(r2[  x  ], r1[x], 1);
+            cond_add(r2[x + 1], r1[x], 1);
             dstp[x] = (double)value / div;
         }
         value = r1[w]; div = 1;
-        cond_add(r0[w - 1], 1);
-        cond_add(r0[w], 2);
-        cond_add(r1[w - 1], 1);
-        cond_add(r1[w], 1);
-        cond_add(r2[w - 1], 1);
-        cond_add(r2[w], 2);
+        cond_add(r0[w - 1], r1[w], 1);
+        cond_add(r0[  w  ], r1[w], 2);
+        cond_add(r1[w - 1], r1[w], 1);
+        cond_add(r2[w - 1], r1[w], 1);
+        cond_add(r2[  w  ], r1[w], 2);
         dstp[w] = (double)value / div;
         r1 += stride;
         dstp += stride;

@@ -4,7 +4,7 @@ Tweak - VapourSynth plugin
 
 This plugin modifies all pixel values various algorithm.
 
-Currentry, Tweak has eight functions as follows.
+Currentry, Tweak has eleven functions as follows.
 
 All functions are supported 8/9/10/16bit planar formats.
 
@@ -66,6 +66,22 @@ divisor_v - vertical diisor.
 
 planes - same as Minimum.
 
+Inflate:
+--------
+Local(3x3) average by taking into account only value is higher than the pixel.::
+
+    tweak.Inflate(clip clip[, int thresh, int[] planes])
+
+thresh - The neighbors pixels higher than this value are ignored.
+
+Deflate:
+--------
+Local(3x3) average by taking into account only value is lower than the pixel.::
+
+    tweak.Deflate(clip clip[, int thresh, int[] planes])
+
+thresh - The neighbor pixels lower than this value are ignored.
+
 Invert:
 -------
 Invert the pixel value.::
@@ -82,7 +98,7 @@ Clamp the pixel value.::
 
 min - minimum threshold of pixel value. default is 0.
 
-max - maximum threshold of the pixel value. default is 65535.
+max - maximum threshold of the pixel value. default is the max value of input format.
 
 planes - same as Minimum.
 
@@ -102,9 +118,25 @@ min_out - determine minimum output pixel value. default is 0.
 
 max_out - determine maximum output pixel value. default is 255 * (2 ^ (8 - bits_per_pixel)).
 
+planes - same as Minimum.
+
 The conversion function is::
 
     output = ((input - min_in) / (max_in - min_in)) ^ (1.0 / gamma) * (max_out - min_out) + min_out
+
+Binarize:
+---------
+Binarize the pixel value.::
+
+    tweak.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
+
+thresh - threshold. default is harf of the max of input format(128, 256, 512 or 32768).
+
+v0 - If the value of pixel is lower than thresh, output will be this. Default is 0.
+
+v1 - If the value of pixel is same or higher than thresh, output will be this. Default is the max value of input(255, 511, 1023 or 65535).
+
+planes - same as Minimum.
 
 Examples:
 ---------
@@ -125,9 +157,6 @@ Examples:
 
     - Edge detection with Sobel operator:
     >>> import math
-    >>> def binalyze(val, thresh):
-    ...     return 255 if val > thresh else 0
-    ...
     >>> def get_lut(thresh):
     ...     lut = []
     ...     for y in range(256):
@@ -139,6 +168,7 @@ Examples:
     >>> edge_h = core.tweak.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
     >>> edge_v = core.tweak.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
     >>> clip = core.std.Lut2([edge_h, edge_v], get_lut(16), 0)
+    >>> clip = core.tweak.Binarize(clip, 10) # binarize edge mask
     >>> clip = core.tweak.Invert(clip) # invert edge mask
 
     - Convert TV levels to PC levels:

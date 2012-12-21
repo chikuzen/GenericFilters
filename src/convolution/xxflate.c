@@ -60,7 +60,7 @@ set_xxflate_data(tweak_handler_t *th, filter_id_t id, char *msg,
     th->fdata = xh;
 
     int err;
-    xh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
+    xh->th = (int)vsapi->propGetInt(in, "thresh", 0, &err);
     if (err || xh->th > 0xFFFF) {
         xh->th = 0xFFFF;
     }

@@ -37,7 +37,8 @@ typedef enum {
     ID_LIMITTER,
     ID_LEVELS,
     ID_INFLATE,
-    ID_DEFLATE
+    ID_DEFLATE,
+    ID_BINARIZE
 } filter_id_t;
 
 
@@ -53,6 +54,7 @@ extern const set_filter_data_func set_invert;
 extern const set_filter_data_func set_limitter;
 extern const set_filter_data_func set_levels;
 extern const set_filter_data_func set_xxflate;
+extern const set_filter_data_func set_binarize;
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \

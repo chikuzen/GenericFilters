@@ -140,6 +140,7 @@ static setter_t get_setter(const char *filter_name)
         { "Levels",        { set_levels,         ID_LEVELS   } },
         { "Inflate",       { set_xxflate,        ID_INFLATE  } },
         { "Deflate",       { set_xxflate,        ID_DEFLATE  } },
+        { "Binarize",      { set_binarize,       ID_BINARIZE } },
         { filter_name,     { NULL,               ID_NONE     } }
     };
 
@@ -225,4 +226,7 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Inflate", plugin);
     reg("Deflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Deflate", plugin);
+    reg("Binarize", 
+        "clip:clip;threshold:int:opt;v0:int:opt;v1:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Binarize", plugin);
 }
