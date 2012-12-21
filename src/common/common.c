@@ -197,7 +197,7 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
                       VSPlugin *plugin)
 {
     conf("chikuzen.does.not.have.his.own.domain.tweak", "tweak",
-         "Pixel value modifier with reference to the neighbor pixels v"
+         "Pixel value modifier with various algorithm v"
          TWEAK_PLUGIN_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
     reg("Convolution",
         "clip:clip;matrix:int[]:opt;bias:float:opt;divisor:float:opt;"

@@ -73,9 +73,10 @@ static void VS_CC
 set_matrix_and_proc_function(convolution_t *ch, const VSMap *in,
                              const VSAPI *vsapi, char *msg)
 {
-    int num = vsapi->propNumElements(in, "matirx");
+    const char *param = "matrix";
+    int num = vsapi->propNumElements(in, param);
     RET_IF_ERROR(num > 0 && num != 3 && num != 5 && num != 9 && num != 25,
-                 "invalid matrix");
+                 "invalid %s", param);
 
     switch (num) {
     case 3:
@@ -99,9 +100,9 @@ set_matrix_and_proc_function(convolution_t *ch, const VSMap *in,
 
     ch->m[4] = 1;
     for (int i = 0; i < num; i++) {
-        int element = (int)vsapi->propGetInt(in, "matrix", i, NULL);
+        int element = (int)vsapi->propGetInt(in, param, i, NULL);
         RET_IF_ERROR(element < -32768 || element > 32767,
-                     "matrix has out of range value");
+                     "%s has out of range value", param);
         ch->m[i] = element;
         ch->rdiv += element;
     }
