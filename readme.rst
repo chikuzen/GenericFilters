@@ -2,11 +2,11 @@
 Tweak - VapourSynth plugin
 ==========================
 
-This plugin modifies all pixel values various algorithm.
+This plugin modifies all pixel values with various algorithms.
 
-Currentry, Tweak has eleven functions as follows.
+All functions support 8/9/10/16bit planar formats.
 
-All functions are supported 8/9/10/16bit planar formats.
+Currently, Tweak has eleven functions as follows.
 
 Minimum:
 --------
@@ -14,7 +14,13 @@ Replaces the pixel by the local(3x3) minimum.::
 
     tweak.Minimum(clip clip[, int[] planes])
 
-planes - planes which processes. default will process all planes.
+planes - Choose which planes to process. default will process all planes.
+          Allowed values are 0, 1, and 2.
+          0 = Y (luma) or R (red)
+          1 = U (Cb)   or G (green)
+          2 = V (Cr)   or B (blue)
+          examples: planes=[0]    = processes the Y or R plane only.
+                    planes=[1,2]  = processes the U V or G B planes only.
 
 Maximum:
 --------
@@ -34,7 +40,7 @@ planes - same as Minimum.
 
 Convolution:
 ------------
-General spatial convolution (horizontal/vertiac 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
+General spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
 
     tweak.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
 
@@ -68,19 +74,19 @@ planes - same as Minimum.
 
 Inflate:
 --------
-Local(3x3) average by taking into account only value is higher than the pixel.::
+Local(3x3) average by taking into account only values higher than the pixel.::
 
     tweak.Inflate(clip clip[, int thresh, int[] planes])
 
-thresh - The neighbors pixels higher than this value are ignored.
+thresh - The neighbouring pixels higher than this value are ignored.
 
 Deflate:
 --------
-Local(3x3) average by taking into account only value is lower than the pixel.::
+Local(3x3) average by taking into account only values lower than the pixel.::
 
     tweak.Deflate(clip clip[, int thresh, int[] planes])
 
-thresh - The neighbor pixels lower than this value are ignored.
+thresh - The neighbouring pixels lower than this value are ignored.
 
 Invert:
 -------
@@ -130,11 +136,11 @@ Binarize the pixel value.::
 
     tweak.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
 
-thresh - threshold. default is harf of the max of input format(128, 256, 512 or 32768).
+thresh - threshold. default is half of the maximum of input format(128, 256, 512 or 32768).
 
 v0 - If the value of pixel is lower than thresh, output will be this. Default is 0.
 
-v1 - If the value of pixel is same or higher than thresh, output will be this. Default is the max value of input(255, 511, 1023 or 65535).
+v1 - If the value of pixel is same or higher than thresh, output will be this. Default is the maximum value of input(255, 511, 1023 or 65535).
 
 planes - same as Minimum.
 
@@ -196,7 +202,7 @@ How to compile:
 
 Source code:
 ------------
-https://github.com/chikuzen/neigbors
+https://github.com/chikuzen/tweak
 
 
 Author: Oka Motofumi (chikuzen.mo at gmail dot com)
