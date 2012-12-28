@@ -171,7 +171,7 @@ proc_8bit_sse2(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
 }
 
 
-static void VS_CC
+static void NBS_FUNC_ALIGN VS_CC
 proc_16bit_sse2(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
 {
     stride >>= 1;

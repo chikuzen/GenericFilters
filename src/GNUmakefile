@@ -3,12 +3,12 @@ include config.mak
 vpath %.c $(SRCDIR)
 vpath %.h $(SRCDIR)
 
-SRCS = convolution/convolution.c convolution/proc_3x3.c convolution/proc_5x5.c \
-       convolution/proc_h.c      convolution/proc_v.c   convolution/convolution_hv.c \
-       convolution/proc_hv.c     convolution/xxflate.c  convolution/inflate.c \
-       convolution/deflate.c     neighbors/maximum_sse2.c    neighbors/median.c \
-       neighbors/minimum.c       neighbors/neighbors.c  alone/invert.c \
-       alone/limitter.c          alone/levels.c         alone/binarize.c \
+SRCS = convolution/convolution.c convolution/proc_3x3.c   convolution/proc_5x5.c \
+       convolution/proc_h.c      convolution/proc_v.c     convolution/convolution_hv.c \
+       convolution/proc_hv.c     convolution/xxflate.c    convolution/inflate.c \
+       convolution/deflate.c     neighbors/maximum_sse2.c neighbors/median.c \
+       neighbors/minimum_sse2.c  neighbors/neighbors.c    alone/invert.c \
+       alone/limitter.c          alone/levels.c           alone/binarize.c \
        alone/alone.c             common/common.c
 
 OBJS = $(SRCS:%.c=%.o)
@@ -43,7 +43,7 @@ endif
 
 .depend: config.mak
 	@$(RM) .depend
-	@$(foreach SRC, $(SRCS:%=$(SRCDIR)/%), $(CC) $(SRC) $(CFLAGS) -MT $(SRC:$(SRCDIR)/%.c=%.o) -MM >> .depend;)
+	@$(foreach SRC, $(SRCS:%=$(SRCDIR)/%), $(CC) $(SRC) $(CFLAGS) -msse2 -MT $(SRC:$(SRCDIR)/%.c=%.o) -MM >> .depend;)
 
 config.mak:
 	./configure
