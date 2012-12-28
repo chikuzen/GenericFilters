@@ -75,23 +75,23 @@ proc_tb_u16_sse2(const uint16_t *rt, const uint16_t *rb, int w, uint16_t *dstp)
     for (int x = 1; x < w - 8; x += 8) {
         __m128i src = _mm_load_si128((__m128i *)(rt + x - 1));
         __m128i max = _mm_loadu_si128((__m128i *)(rt + x));
-        max = _mm_subs_epu16(src, max);
+        max = _mm_subs_epu16(max, src);
         max = _mm_adds_epu16(src, max);
 
         src = _mm_loadu_si128((__m128i *)(rt + x + 1));
-        max = _mm_subs_epu16(src, max);
+        max = _mm_subs_epu16(max, src);
         max = _mm_adds_epu16(src, max);
 
         src = _mm_load_si128((__m128i *)(rb + x - 1));
-        max = _mm_subs_epu16(src, max);
+        max = _mm_subs_epu16(max, src);
         max = _mm_adds_epu16(src, max);
-        
+
         src = _mm_loadu_si128((__m128i *)(rb + x));
-        max = _mm_subs_epu16(src, max);
+        max = _mm_subs_epu16(max, src);
         max = _mm_adds_epu16(src, max);
 
         src = _mm_loadu_si128((__m128i *)(rb + x + 1));
-        max = _mm_subs_epu16(src, max);
+        max = _mm_subs_epu16(max, src);
         max = _mm_adds_epu16(src, max);
 
         _mm_storeu_si128((__m128i *)(dstp + x), max);
@@ -194,36 +194,36 @@ proc_16bit_sse2(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
         for (int x = 1; x < w - 8; x += 8) {
             __m128i src = _mm_load_si128((__m128i *)(r0 + x - 1));
             __m128i max = _mm_load_si128((__m128i *)(r1 + x - 1));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_load_si128((__m128i *)(r2 + x - 1));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r0 + x));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r1 + x));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r2 + x));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r0 + x + 1));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r1 + x + 1));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             src = _mm_loadu_si128((__m128i *)(r2 + x + 1));
-            max = _mm_subs_epu16(src, max);
-            max = _mm_adds_epu16(src, max);;
+            max = _mm_subs_epu16(max, src);
+            max = _mm_adds_epu16(src, max);
 
             _mm_storeu_si128((__m128i *)(dstp + x), max);
         }
