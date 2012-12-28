@@ -25,7 +25,16 @@
 #define NEIGHBORS_FILETR_H
 
 #include <stdint.h>
+#include <emmintrin.h>
 #include "VapourSynth.h"
+
+#ifdef _MSC_VER
+#define NBS_ALIGN __declspec(align(16))
+#define NBS_FUNC_ALIGN
+#else
+#define NBS_ALIGN __attribute__((aligned(16)))
+#define NBS_FUNC_ALIGN __attribute__((force_align_arg_pointer))
+#endif
 
 typedef void (VS_CC *proc_neighbors)(int, int, int, uint8_t *, const uint8_t *);
 
