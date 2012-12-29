@@ -20,57 +20,14 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-
+#include <string.h>
 #include <stdint.h>
+
+#define PROC_NEIGHBORS
 #include "neighbors.h"
 
 
 /* from 'Implementing Median Filters in XC4000E FPGAs' by John L. Smith */
-#define LOWHIGH(low, high) {\
-    if (low > high) {\
-        unsigned t = low;\
-        low = high;\
-        high = t;\
-    }\
-}\
-
-static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
-                                   unsigned m3, unsigned m4, unsigned m5,
-                                   unsigned m6, unsigned m7, unsigned m8)
-{
-    unsigned  x0, x1, x2, x3, x4, x5, x6, x7;
-
-    x0 = m1;
-    x1 = m2;
-    LOWHIGH(x0, x1);
-    x2 = m0;
-    LOWHIGH(x0, x2);
-    LOWHIGH(x1, x2);
-    x3 = m4;
-    x4 = m5;
-    LOWHIGH(x3, x4);
-    x5 = m3;
-    LOWHIGH(x3, x5);
-    LOWHIGH(x4, x5);
-    if (x0 < x3) x0 = x3;
-    x3 = m7;
-    x6 = m8;
-    LOWHIGH(x3, x6);
-    x7 = m6;
-    LOWHIGH(x3, x7);
-    if (x0 < x3) x0 = x3;
-    LOWHIGH(x6, x7);
-    LOWHIGH(x4, x6);
-    if (x1 < x4) x1 = x4;
-    if (x1 > x6) x1 = x6;
-    if (x5 > x7) x5 = x7;
-    if (x2 > x5) x2 = x5;
-    LOWHIGH(x1, x2);
-    if (x0 < x1) x0 = x1;
-    return x0 > x2 ? x2 : x0;
-}
-#undef LOWHIGH
-
 #define LOWHIGHu8(X, Y) {\
     __m128i min = _mm_min_epu8(X, Y); \
     __m128i max = _mm_max_epu8(X, Y); \
@@ -78,34 +35,41 @@ static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
     Y = max; \
 }
 
-static void NBS_FUNC_ALIGN VS_CC
-proc_8bit_sse2(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
-{
-    const uint8_t *r0 = r1;
-    for (int y = 0; y <= h; y++) {
-        const uint8_t *r2 = r1 + stride * !!(h - y);
 
-        dstp[0] = get_median_9(r0[0], r0[0], r0[1], r1[0], r1[0],
-                               r1[1], r2[0], r2[0], r2[1]);
-        int x;
-        for (x = 1; x <= w - 16; x += 16) {
-            __m128i x0 = _mm_loadu_si128((__m128i *)(r0 + x));
-            __m128i x1 = _mm_loadu_si128((__m128i *)(r0 + x + 1));
+static void NBS_FUNC_ALIGN VS_CC
+proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
+               uint8_t *dstp, const uint8_t *srcp)
+{
+    uint8_t *p0 = buff + 16;
+    uint8_t *p1 = p0 + bstride;
+    uint8_t *p2 = p1 + bstride;
+    uint8_t *orig = p0, *end = p2;
+
+    line_copy8(p0, srcp, width);
+    line_copy8(p1, srcp, width);
+    srcp += stride;
+
+    for (int y = 0; y < height; y++) {
+        line_copy8(p2, srcp, width);
+        
+        for (int x = 0; x < width; x += 16) {
+            __m128i x0 = _mm_load_si128((__m128i *)(p0 + x));
+            __m128i x1 = _mm_loadu_si128((__m128i *)(p0 + x + 1));
             LOWHIGHu8(x0, x1);
-            __m128i x2 = _mm_load_si128((__m128i *)(r0 + x - 1));
+            __m128i x2 = _mm_loadu_si128((__m128i *)(p0 + x - 1));
             LOWHIGHu8(x0, x2);
             LOWHIGHu8(x1, x2);
-            __m128i x3 = _mm_loadu_si128((__m128i *)(r1 + x));
-            __m128i x4 = _mm_loadu_si128((__m128i *)(r1 + x + 1));
+            __m128i x3 = _mm_load_si128((__m128i *)(p1 + x));
+            __m128i x4 = _mm_loadu_si128((__m128i *)(p1 + x + 1));
             LOWHIGHu8(x3, x4);
-            __m128i x5 = _mm_load_si128((__m128i *)(r1 + x - 1));
+            __m128i x5 = _mm_loadu_si128((__m128i *)(p1 + x - 1));
             LOWHIGHu8(x3, x5);
             LOWHIGHu8(x4, x5);
             x0 = _mm_max_epu8(x0, x3);
-            x3 = _mm_loadu_si128((__m128i *)(r2 + x));
-            __m128i x6 = _mm_loadu_si128((__m128i *)(r2 + x + 1));
+            x3 = _mm_load_si128((__m128i *)(p2 + x));
+            __m128i x6 = _mm_loadu_si128((__m128i *)(p2 + x + 1));
             LOWHIGHu8(x3, x6);
-            __m128i x7 = _mm_load_si128((__m128i *)(r2 + x - 1));
+            __m128i x7 = _mm_loadu_si128((__m128i *)(p2 + x - 1));
             LOWHIGHu8(x3, x7);
             LOWHIGHu8(x6, x7);
             x0 = _mm_max_epu8(x0, x3);
@@ -117,19 +81,13 @@ proc_8bit_sse2(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
             LOWHIGHu8(x1, x2);
             x0 = _mm_max_epu8(x0, x1);
             x0 = _mm_min_epu8(x0, x2);
-            _mm_storeu_si128((__m128i *)(dstp + x), x0);
+            _mm_store_si128((__m128i *)(dstp + x), x0);
         }
-        while (x <= w) {
-            int xl = x - 1;
-            int xr = x + !!(w - x);
-            dstp[x] = get_median_9(r0[xl], r0[x], r0[xr],
-                                   r1[xl], r1[x], r1[xr],
-                                   r2[xl], r2[x], r2[xr]);
-            x++;
-        }
-        r0 = r1;
-        r1 += stride;
+        srcp += stride * (y < height - 2);
         dstp += stride;
+        p0 = p1;
+        p1 = p2;
+        p2 = (p2 == end) ? orig : p2 + bstride;
     }
 }
 #undef LOWHIGHu8
@@ -151,39 +109,46 @@ proc_8bit_sse2(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
     X = _mm_subs_epu16(Y, tmp); \
 }
 
+
 static void NBS_FUNC_ALIGN VS_CC
-proc_16bit_sse2(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
+proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
+                uint8_t *d, const uint8_t *s)
 {
     stride >>= 1;
-    const uint16_t *r1 = (uint16_t *)srcp;
-    const uint16_t *r0 = r1;
     uint16_t *dstp = (uint16_t *)d;
+    const uint16_t *srcp = (uint16_t *)s;
 
-    for (int y = 0; y <= h; y++) {
-        const uint16_t *r2 = r1 + stride * !!(h -y);
+    bstride >>= 1;
+    uint16_t *p0 = (uint16_t *)buff + 8;
+    uint16_t *p1 = p0 + bstride;
+    uint16_t *p2 = p1 + bstride;
+    uint16_t *orig = p0, *end = p2;
 
-        dstp[0] = get_median_9(r0[0], r0[0], r0[1], r1[0], r1[0],
-                               r1[1], r2[0], r2[0], r2[1]);
-        __m128i x0, x1, x2, x3, x4, x5, x6, x7;
-        int x;
-        for (x = 1; x <= w - 8; x += 8) {
-            x0 = _mm_loadu_si128((__m128i *)(r0 + x));
-            x1 = _mm_loadu_si128((__m128i *)(r0 + x + 1));
+    line_copy16(p0, srcp, width);
+    line_copy16(p1, srcp, width);
+    srcp += stride;
+
+    for (int y = 0; y < height; y++) {
+        line_copy16(p2, srcp, width);
+
+        for (int x = 0; x < width; x += 8) {
+            __m128i x0 = _mm_load_si128((__m128i *)(p0 + x));
+            __m128i x1 = _mm_loadu_si128((__m128i *)(p0 + x + 1));
             LOWHIGHu16(x0, x1);
-            x2 = _mm_load_si128((__m128i *)(r0 + x - 1));
+            __m128i x2 = _mm_loadu_si128((__m128i *)(p0 + x - 1));
             LOWHIGHu16(x0, x2);
             LOWHIGHu16(x1, x2);
-            x3 = _mm_loadu_si128((__m128i *)(r1 + x));
-            x4 = _mm_loadu_si128((__m128i *)(r1 + x + 1));
+            __m128i x3 = _mm_load_si128((__m128i *)(p1 + x));
+            __m128i x4 = _mm_loadu_si128((__m128i *)(p1 + x + 1));
             LOWHIGHu16(x3, x4);
-            x5 = _mm_load_si128((__m128i *)(r1 + x - 1));
+            __m128i x5 = _mm_loadu_si128((__m128i *)(p1 + x - 1));
             LOWHIGHu16(x3, x5);
             LOWHIGHu16(x4, x5);
             HIGHu16(x0, x0, x3);
-            x3 = _mm_loadu_si128((__m128i *)(r2 + x));
-            x6 = _mm_loadu_si128((__m128i *)(r2 + x + 1));
+            x3 = _mm_load_si128((__m128i *)(p2 + x));
+            __m128i x6 = _mm_loadu_si128((__m128i *)(p2 + x + 1));
             LOWHIGHu16(x3, x6);
-            x7 = _mm_load_si128((__m128i *)(r2 + x - 1));
+            __m128i x7 = _mm_loadu_si128((__m128i *)(p2 + x - 1));
             LOWHIGHu16(x3, x7);
             LOWHIGHu16(x6, x7);
             HIGHu16(x0, x0, x3);
@@ -197,17 +162,11 @@ proc_16bit_sse2(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
             LOWu16(x0, x0, x2);
             _mm_storeu_si128((__m128i *)(dstp + x), x0);
         }
-        while (x <= w) {
-            int xl = x - 1;
-            int xr = x + !!(w - x);
-            dstp[x] = get_median_9(r0[xl], r0[x], r0[xr],
-                                   r1[xl], r1[x], r1[xr],
-                                   r2[xl], r2[x], r2[xr]);
-            x++;
-        }
-        r0 = r1;
-        r1 += stride;
+        srcp += stride * (y < height - 2);
         dstp += stride;
+        p0 = p1;
+        p1 = p2;
+        p2 = (p2 == end) ? orig : p2 + bstride;
     }
 }
 #undef LOWHIGHu16

@@ -22,228 +22,126 @@
 
 
 #include <stdint.h>
+
+#define PROC_NEIGHBORS
 #include "neighbors.h"
 
 
-static unsigned VS_CC get_min(unsigned x, unsigned y, unsigned z)
-{
-    if (y > x) {
-        return z > x ? x : z;
-    }
-    return z > y ? y : z;
-}
-
-
 static void NBS_FUNC_ALIGN VS_CC
-proc_tb_u8_sse2(const uint8_t *rt, const uint8_t *rb, int w, uint8_t *dstp)
+proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
+               uint8_t *dstp, const uint8_t *srcp)
 {
-    uint8_t mint, minb;
-    mint = get_min(rt[0], rt[1], rb[0]);
-    dstp[0] = mint < rb[1] ? mint : rb[1];
-    for (int x = 1; x < w - 16; x += 16) {
-        __m128i src = _mm_load_si128((__m128i *)(rt + x - 1));
-        __m128i min = _mm_loadu_si128((__m128i *)(rt + x));
-        min = _mm_min_epu8(src, min);
-        src = _mm_loadu_si128((__m128i *)(rt + x + 1));
-        min = _mm_min_epu8(src, min);
-        src = _mm_load_si128((__m128i *)(rb + x - 1));
-        min = _mm_min_epu8(src, min);
-        src = _mm_loadu_si128((__m128i *)(rb + x));
-        min = _mm_min_epu8(src, min);
-        src = _mm_loadu_si128((__m128i *)(rb + x + 1));
-        min = _mm_min_epu8(src, min);
+    uint8_t *p0 = buff + 16;
+    uint8_t *p1 = p0 + bstride;
+    uint8_t *p2 = p1 + bstride;
+    uint8_t *orig = p0, *end = p2;
 
-        _mm_storeu_si128((__m128i *)(dstp + x), min);
-    }
-    for (int x = w - 16; x < w; x++) {
-        mint = get_min(rt[x - 1], rt[x], rt[x + 1]);
-        minb = get_min(rb[x - 1], rb[x], rb[x + 1]);
-        dstp[x] = mint < minb ? mint : minb;
-    }
-    minb = get_min(rt[w - 1], rt[w], rb[w - 1]);
-    dstp[w] = minb < rb[w] ? minb : rb[w];
-}
+    line_copy8(p0, srcp, width);
+    line_copy8(p1, srcp, width);
+    srcp += stride;
 
+    for (int y = 0; y < height; y++) {
+        line_copy8(p2, srcp, width);
 
-static void NBS_FUNC_ALIGN VS_CC
-proc_tb_u16_sse2(const uint16_t *rt, const uint16_t *rb, int w, uint16_t *dstp)
-{
-    uint16_t mint, minb;
-    mint = get_min(rt[0], rt[1], rb[0]);
-    dstp[0] = mint < rb[1] ? mint : rb[1];
-    for (int x = 1; x < w - 8; x += 8) {
-        __m128i src = _mm_load_si128((__m128i *)(rt + x - 1));
-        __m128i min = _mm_loadu_si128((__m128i *)(rt + x));
-        min = _mm_subs_epu16(src, min);
-        min = _mm_subs_epu16(src, min);
-
-        src = _mm_loadu_si128((__m128i *)(rt + x + 1));
-        min = _mm_subs_epu16(src, min);
-        min = _mm_subs_epu16(src, min);
-
-        src = _mm_load_si128((__m128i *)(rb + x - 1));
-        min = _mm_subs_epu16(src, min);
-        min = _mm_subs_epu16(src, min);
-
-        src = _mm_loadu_si128((__m128i *)(rb + x));
-        min = _mm_subs_epu16(src, min);
-        min = _mm_subs_epu16(src, min);
-
-        src = _mm_loadu_si128((__m128i *)(rb + x + 1));
-        min = _mm_subs_epu16(src, min);
-        min = _mm_subs_epu16(src, min);
-
-        _mm_storeu_si128((__m128i *)(dstp + x), min);
-    }
-    for (int x = w - 8; x < w; x++) {
-        mint = get_min(rt[x - 1], rt[x], rt[x + 1]);
-        minb = get_min(rb[x - 1], rb[x], rb[x + 1]);
-        dstp[x] = mint < minb ? mint : minb;
-    }
-    minb = get_min(rt[w - 1], rt[w], rt[w - 1]);
-    dstp[w] = minb < rb[w] ? minb : rb[w];
-}
-
-
-static void NBS_FUNC_ALIGN VS_CC
-proc_8bit_sse2(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
-{
-    const uint8_t *r0 = r1;
-    const uint8_t *r2 = r1 + stride;
-
-    proc_tb_u8_sse2(r1, r2, w, dstp);
-    r1 += stride;
-    r2 += stride;
-    dstp += stride;
-
-    for (int y = 1; y < h; y++) {
-        uint8_t min0 = get_min(r0[0], r1[0], r2[0]);
-        uint8_t min1 = get_min(r0[1], r1[1], r2[1]);
-        dstp[0] = min0 < min1 ? min0 : min1;
-
-        for (int x = 1; x < w - 16; x += 16) {
-            __m128i src = _mm_load_si128((__m128i *)(r0 + x - 1));
-            __m128i min = _mm_load_si128((__m128i *)(r1 + x - 1));
+        for (int x = 0; x < width; x += 16) {
+            __m128i src = _mm_loadu_si128((__m128i *)(p0 + x - 1));
+            __m128i min = _mm_loadu_si128((__m128i *)(p1 + x - 1));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_load_si128((__m128i *)(r2 + x - 1));
+            src = _mm_loadu_si128((__m128i *)(p2 + x - 1));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r0 + x));
+            src = _mm_load_si128((__m128i *)(p0 + x));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r1 + x));
+            src = _mm_load_si128((__m128i *)(p1 + x));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r2 + x));
+            src = _mm_load_si128((__m128i *)(p2 + x));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r0 + x + 1));
+            src = _mm_loadu_si128((__m128i *)(p0 + x + 1));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r1 + x + 1));
+            src = _mm_loadu_si128((__m128i *)(p1 + x + 1));
             min = _mm_min_epu8(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r2 + x + 1));
+            src = _mm_loadu_si128((__m128i *)(p2 + x + 1));
             min = _mm_min_epu8(src, min);
 
-            _mm_storeu_si128((__m128i *)(dstp + x), min);
+            _mm_store_si128((__m128i *)(dstp + x), min);
         }
-        for (int x = w - 16; x < w; x++) {
-            min0 = get_min(r0[x - 1], r0[x], r0[x + 1]);
-            min1 = get_min(r1[x - 1], r1[x], r1[x + 1]);
-            uint8_t min2 = get_min(r2[x - 1], r2[x], r2[x + 1]);
-            dstp[x] = get_min(min0, min1, min2);
-        }
-
-        min0 = get_min(r0[w - 1], r1[w - 1], r2[w - 1]);
-        min1 = get_min(r0[w], r1[w], r2[w]);
-        dstp[w] = min0 < min1 ? min0 : min1;
-
-        r0 += stride;
-        r1 += stride;
-        r2 += stride;
+        srcp += stride * (y < height - 2);
         dstp += stride;
+        p0 = p1;
+        p1 = p2;
+        p2 = (p2 == end) ? orig : p2 + bstride;
     }
-
-    proc_tb_u8_sse2(r0, r1, w, dstp);
 }
 
 
 static void NBS_FUNC_ALIGN VS_CC
-proc_16bit_sse2(int w, int h, int stride, uint8_t *d, const uint8_t *srcp)
+proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
+                uint8_t *d, const uint8_t *s)
 {
     stride >>= 1;
-    const uint16_t *r1 = (uint16_t *)srcp;
-    const uint16_t *r0 = r1;
-    const uint16_t *r2 = r1 + stride;
-
     uint16_t *dstp = (uint16_t *)d;
+    const uint16_t *srcp = (uint16_t *)s;
 
-    proc_tb_u16_sse2(r1, r2, w, dstp);
-    r1 += stride;
-    r2 += stride;
-    dstp += stride;
+    bstride >>= 1;
+    uint16_t *p0 = (uint16_t *)buff + 8;
+    uint16_t *p1 = p0 + bstride;
+    uint16_t *p2 = p1 + bstride;
+    uint16_t *orig = p0, *end = p2;
 
-    for (int y = 1; y < h; y++) {
-        uint16_t min0 = get_min(r0[0], r1[0], r2[0]);
-        uint16_t min1 = get_min(r0[1], r1[1], r2[1]);
-        dstp[0] = min0 < min1 ? min0 : min1;
+    line_copy16(p0, srcp, width);
+    line_copy16(p1, srcp, width);
 
-        for (int x = 1; x < w - 8; x += 8) {
-            __m128i src = _mm_load_si128((__m128i *)(r0 + x - 1));
-            __m128i min = _mm_load_si128((__m128i *)(r1 + x - 1));
-            min = _mm_subs_epu16(src, min);
-            min = _mm_subs_epu16(src, min);
-
-            src = _mm_load_si128((__m128i *)(r2 + x - 1));
-            min = _mm_subs_epu16(src, min);
-            min = _mm_subs_epu16(src, min);
-
-            src = _mm_loadu_si128((__m128i *)(r0 + x));
+    for (int y = 0; y < height; y++) {
+        line_copy16(p2, srcp, width);
+    
+        for (int x = 0; x < width; x += 8) {
+            __m128i src = _mm_loadu_si128((__m128i *)(p0 + x - 1));
+            __m128i min = _mm_loadu_si128((__m128i *)(p1 + x - 1));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r1 + x));
+            src = _mm_loadu_si128((__m128i *)(p2 + x - 1));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r2 + x));
+            src = _mm_load_si128((__m128i *)(p0 + x));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r0 + x + 1));
+            src = _mm_load_si128((__m128i *)(p1 + x));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r1 + x + 1));
+            src = _mm_load_si128((__m128i *)(p2 + x));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            src = _mm_loadu_si128((__m128i *)(r2 + x + 1));
+            src = _mm_loadu_si128((__m128i *)(p0 + x + 1));
             min = _mm_subs_epu16(src, min);
             min = _mm_subs_epu16(src, min);
 
-            _mm_storeu_si128((__m128i *)(dstp + x), min);
+            src = _mm_loadu_si128((__m128i *)(p1 + x + 1));
+            min = _mm_subs_epu16(src, min);
+            min = _mm_subs_epu16(src, min);
+
+            src = _mm_loadu_si128((__m128i *)(p2 + x + 1));
+            min = _mm_subs_epu16(src, min);
+            min = _mm_subs_epu16(src, min);
+
+            _mm_store_si128((__m128i *)(dstp + x), min);
         }
-        for (int x = w - 8; x < w; x++) {
-            min0 = get_min(r0[x - 1], r0[x], r0[x + 1]);
-            min1 = get_min(r1[x - 1], r1[x], r1[x + 1]);
-            uint16_t min2 = get_min(r2[x - 1], r2[x], r2[x + 1]);
-            dstp[x] = get_min(min0, min1, min2);
-        }
-
-        min0 = get_min(r0[w - 1], r1[w - 1], r2[w - 1]);
-        min1 = get_min(r0[w], r1[w], r2[w]);
-        dstp[w] = min0 < min1 ? min0 : min1;
-
-        r0 += stride;
-        r1 += stride;
-        r2 += stride;
+        srcp += stride * (y < height - 2);
         dstp += stride;
+        p0 = p1;
+        p1 = p2;
+        p2 = (p2 == end) ? orig : p2 + bstride;
     }
-
-    proc_tb_u16_sse2(r0, r1, w, dstp);
 }
 
 

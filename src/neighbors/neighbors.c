@@ -24,27 +24,52 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-
 #include "common.h"
 #include "neighbors.h"
+
+#ifdef _WIN32
+#include <malloc.h>
+#else
+static inline void *_aligned_malloc(size_t size, size_t alignment)
+{
+    void *p;
+    int ret = posix_memalign(&p, alignment, size);
+    return (ret == 0) ? p : 0;
+}
+
+static inline void _aligned_free(void *p)
+{
+    free(p);
+}
+#endif
 
 
 static void VS_CC
 neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
                     const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
 {
-    int index = fi->bytesPerSample - 1;
+    int bps = fi->bytesPerSample;
+    int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
+     uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 3, 16);
+    if (!buff) {
+        return;
+    }
+
+    bps--;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
         }
 
-        nh->function[index](vsapi->getFrameWidth(src, plane) - 1,
-                            vsapi->getFrameHeight(src, plane) - 1,
-                            vsapi->getStride(src, plane),
-                            vsapi->getWritePtr(dst, plane),
-                            vsapi->getReadPtr(src, plane));
+        nh->function[bps](buff, bstride,
+                          vsapi->getFrameWidth(src, plane),
+                          vsapi->getFrameHeight(src, plane),
+                          vsapi->getStride(src, plane),
+                          vsapi->getWritePtr(dst, plane),
+                          vsapi->getReadPtr(src, plane));
     }
+
+    _aligned_free(buff);
 }
 
 
