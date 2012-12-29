@@ -26,39 +26,50 @@
 
 
 /* from 'Implementing Median Filters in XC4000E FPGAs' by John L. Smith */
-#define LOWHIGH(in0, in1, low, high) {\
-    low = in0; high = in1;\
-    if (in0 > in1) { low = in1; high = in0;}\
-}
+#define LOWHIGH(low, high) {\
+    if (low > high) {\
+        unsigned t = low;\
+        low = high;\
+        high = t;\
+    }\
+}\
 
 static unsigned VS_CC get_median_9(unsigned m0, unsigned m1, unsigned m2,
                                    unsigned m3, unsigned m4, unsigned m5,
                                    unsigned m6, unsigned m7, unsigned m8)
 {
-    unsigned  x0, x1, x2, x3, x4, x5, x6, x7, x8, x9;
+    unsigned  x0, x1, x2, x3, x4, x5, x6, x7;
 
-    LOWHIGH( m1, m2, x0, x1);
-    LOWHIGH( m0, x0, x2, x3);
-    LOWHIGH( x1, x3, x0, x4);
-    LOWHIGH( m4, m5, x5, x6);
-    LOWHIGH( m3, x5, x7, x8);
-    LOWHIGH( x6, x8, x5, x9);
-    LOWHIGH( m7, m8, x1, x3);
-    LOWHIGH( m6, x1, x6, x8);
-    x1 = x2 > x7 ? x2 : x7;
-    LOWHIGH( x3, x8, x2, x7);
-    x3 = x1 > x6 ? x1 : x6;
-    x8 = x7 > x9 ? x7 : x9;
-    x7 = x4 > x8 ? x8 : x4;
-    LOWHIGH( x2, x5, x1, x6);
-    x2 = x0 > x1 ? x0 : x1;
-    x1 = x2 > x6 ? x6 : x2;
-    LOWHIGH( x1, x7, x0, x2);
-    x1 = x0 > x3 ? x0 : x3;
-    return x1 > x2 ? x2 : x1;
+    x0 = m1;
+    x1 = m2;
+    LOWHIGH(x0, x1);
+    x2 = m0;
+    LOWHIGH(x0, x2);
+    LOWHIGH(x1, x2);
+    x3 = m4;
+    x4 = m5;
+    LOWHIGH(x3, x4);
+    x5 = m3;
+    LOWHIGH(x3, x5);
+    LOWHIGH(x4, x5);
+    if (x0 < x3) x0 = x3;
+    x3 = m7;
+    x6 = m8;
+    LOWHIGH(x3, x6);
+    x7 = m6;
+    LOWHIGH(x3, x7);
+    if (x0 < x3) x0 = x3;
+    LOWHIGH(x6, x7);
+    LOWHIGH(x4, x6);
+    if (x1 < x4) x1 = x4;
+    if (x1 > x6) x1 = x6;
+    if (x5 > x7) x5 = x7;
+    if (x2 > x5) x2 = x5;
+    LOWHIGH(x1, x2);
+    if (x0 < x1) x0 = x1;
+    return x0 > x2 ? x2 : x0;
 }
 #undef LOWHIGH
-
 
 static void VS_CC
 proc_8bit(int w, int h, int stride, uint8_t *dstp, const uint8_t *r1)
