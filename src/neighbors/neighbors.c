@@ -24,24 +24,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+
+#define USE_ALIGNED_MALLOC
 #include "common.h"
 #include "neighbors.h"
-
-#ifdef _WIN32
-#include <malloc.h>
-#else
-static inline void *_aligned_malloc(size_t size, size_t alignment)
-{
-    void *p;
-    int ret = posix_memalign(&p, alignment, size);
-    return (ret == 0) ? p : 0;
-}
-
-static inline void _aligned_free(void *p)
-{
-    free(p);
-}
-#endif
 
 
 static void VS_CC

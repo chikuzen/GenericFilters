@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 
+#define USE_ALIGNED_MALLOC
 #include "common.h"
 #include "convolution_hv.h"
 
@@ -32,7 +33,14 @@ convolution_hv_get_frame(convolution_hv_t *ch, const VSFormat *fi,
                          const VSFrameRef **fr, const VSAPI *vsapi,
                          const VSFrameRef *src, VSFrameRef *dst)
 {
-    uint16_t max = (1 << fi->bitsPerSample) - 1;
+    int bps = fi->bytesPerSample;
+    int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
+    uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 5, 16);
+    if (!buff) {
+        return;
+    }
+
+    bps--;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
@@ -44,12 +52,13 @@ convolution_hv_get_frame(convolution_hv_t *ch, const VSFormat *fi,
             continue;
         }
 
-        ch->function[fi->bytesPerSample - 1](ch, width, height,
-                                             vsapi->getStride(src, plane),
-                                             vsapi->getWritePtr(dst, plane),
-                                             vsapi->getReadPtr(src, plane),
-                                             max);
+        ch->function[bps](ch, buff, bstride, width, height,
+                          vsapi->getStride(src, plane),
+                          vsapi->getWritePtr(dst, plane),
+                          vsapi->getReadPtr(src, plane));
     }
+
+    _aligned_free(buff);
 }
 
 
@@ -67,9 +76,9 @@ set_matrix(convolution_hv_t *ch, const VSMap *in, const VSAPI *vsapi, char *msg)
 
         int err;
         matrix[i][2] = 1;
-        for (int j = 0; i < num; i++) {
+        for (int j = 0; j < num; j++) {
             int element = (int)vsapi->propGetInt(in, params_m[i], j, NULL);
-            RET_IF_ERROR(element < -32768 || element > 32767,
+            RET_IF_ERROR(element < -1024 || element > 1024,
                          "%s has out of range value", params_m[i]);
             matrix[i][j] = element;
             *rdiv[i] += element;
@@ -77,7 +86,7 @@ set_matrix(convolution_hv_t *ch, const VSMap *in, const VSAPI *vsapi, char *msg)
         if (*rdiv[i] == 0.0) {
             *rdiv[i] = 1.0;
         }
-        
+
         double div = vsapi->propGetFloat(in, params_d[i], 0, &err);
         if (!err && div != 0.0) {
             *rdiv[i] = div;

@@ -7,8 +7,8 @@
 
 typedef struct filter_data convolution_hv_t;
 
-typedef void (VS_CC *proc_convo_hv)(convolution_hv_t *, int, int, int,
-                                     uint8_t *, const uint8_t *, uint16_t);
+typedef void (VS_CC *proc_convo_hv)(convolution_hv_t *, uint8_t *, int, int,
+                                     int, int, uint8_t *, const uint8_t *);
 
 struct filter_data {
     int m_h[5];

@@ -56,6 +56,25 @@ extern const set_filter_data_func set_levels;
 extern const set_filter_data_func set_xxflate;
 extern const set_filter_data_func set_binarize;
 
+
+#ifdef USE_ALIGNED_MALLOC
+#ifdef _WIN32
+#include <malloc.h>
+#else
+static inline void *_aligned_malloc(size_t size, size_t alignment)
+{
+    void *p;
+    int ret = posix_memalign(&p, alignment, size);
+    return (ret == 0) ? p : 0;
+}
+
+static inline void _aligned_free(void *p)
+{
+    free(p);
+}
+#endif // _WIN32
+#endif // USE_ALIGNED_MALLOC
+
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
         snprintf(msg, 240, __VA_ARGS__); \
@@ -63,4 +82,4 @@ extern const set_filter_data_func set_binarize;
     } \
 }
 
-#endif
+#endif // TWEAK_COMMON_H

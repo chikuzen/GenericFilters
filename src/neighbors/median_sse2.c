@@ -23,9 +23,8 @@
 #include <string.h>
 #include <stdint.h>
 
-#define PROC_NEIGHBORS
 #include "neighbors.h"
-
+#include "sse2.h"
 
 /* from 'Implementing Median Filters in XC4000E FPGAs' by John L. Smith */
 #define LOWHIGHu8(X, Y) {\
@@ -36,7 +35,7 @@
 }
 
 
-static void NBS_FUNC_ALIGN VS_CC
+static void TWK_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                uint8_t *dstp, const uint8_t *srcp)
 {
@@ -45,12 +44,12 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint8_t *p2 = p1 + bstride;
     uint8_t *orig = p0, *end = p2;
 
-    line_copy8(p0, srcp, width);
-    line_copy8(p1, srcp, width);
+    line_copy8(p0, srcp, width, 1);
+    line_copy8(p1, srcp, width, 1);
     srcp += stride;
 
     for (int y = 0; y < height; y++) {
-        line_copy8(p2, srcp, width);
+        line_copy8(p2, srcp, width, 1);
         
         for (int x = 0; x < width; x += 16) {
             __m128i x0 = _mm_load_si128((__m128i *)(p0 + x));
@@ -110,7 +109,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 }
 
 
-static void NBS_FUNC_ALIGN VS_CC
+static void TWK_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 uint8_t *d, const uint8_t *s)
 {
@@ -124,12 +123,12 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width);
-    line_copy16(p1, srcp, width);
+    line_copy16(p0, srcp, width, 1);
+    line_copy16(p1, srcp, width, 1);
     srcp += stride;
 
     for (int y = 0; y < height; y++) {
-        line_copy16(p2, srcp, width);
+        line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
             __m128i x0 = _mm_load_si128((__m128i *)(p0 + x));

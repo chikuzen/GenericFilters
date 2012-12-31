@@ -226,7 +226,7 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Inflate", plugin);
     reg("Deflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Deflate", plugin);
-    reg("Binarize", 
+    reg("Binarize",
         "clip:clip;threshold:int:opt;v0:int:opt;v1:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Binarize", plugin);
 }

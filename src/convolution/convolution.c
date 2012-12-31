@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 
+#define USE_ALIGNED_MALLOC
 #include "common.h"
 #include "convolution.h"
 
@@ -32,27 +33,42 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
                       const VSFrameRef **fr, const VSAPI *vsapi,
                       const VSFrameRef *src, VSFrameRef *dst)
 {
-    uint16_t max = (1 << fi->bitsPerSample) - 1;
-    int index = fi->bytesPerSample - 1;
+    int bps = fi->bytesPerSample;
+
+    uint8_t *buff = NULL;
+    int bstride = 0;
+
+    int num = 1;
+    if (ch->function == convo_3x3 || ch->function == convo_v3) {
+        num = 3;
+    }
+    if (ch->function == convo_5x5 || ch->function == convo_v5) {
+        num = 5;
+    }
+    bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
+    buff = (uint8_t *)_aligned_malloc(bstride * num, 16);
+    if (!buff) {
+        return;
+    }
+
+    bps--;
+
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
         }
 
         int width = vsapi->getFrameWidth(src, plane);
-        if (width < 2 &&
-            ch->function != convo_v3 && ch->function != convo_v5) {
+        if (width < 2 && ch->function != convo_v3 && ch->function != convo_v5) {
             continue;
         }
         if (width < 4 &&
-           (ch->function == convo_h5 || ch->function == convo_5x5)) {
+            (ch->function == convo_h5 || ch->function == convo_5x5)) {
             continue;
         }
 
         int height = vsapi->getFrameHeight(src, plane);
-        if (height < 2 &&
-            ch->function != convo_h3 &&
-            ch->function != convo_h5) {
+        if (height < 2 && ch->function != convo_h3 && ch->function != convo_h5) {
             continue;
         }
         if (height < 4 &&
@@ -60,12 +76,12 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
             continue;
         }
 
-        ch->function[index](ch, width, height,
-                            vsapi->getStride(src, plane),
-                            vsapi->getWritePtr(dst, plane),
-                            vsapi->getReadPtr(src, plane),
-                            max);
+        ch->function[bps](ch, buff, bstride, width, height,
+                          vsapi->getStride(src, plane),
+                          vsapi->getWritePtr(dst, plane),
+                          vsapi->getReadPtr(src, plane));
     }
+    _aligned_free(buff);
 }
 
 
@@ -101,7 +117,7 @@ set_matrix_and_proc_function(convolution_t *ch, const VSMap *in,
     ch->m[4] = 1;
     for (int i = 0; i < num; i++) {
         int element = (int)vsapi->propGetInt(in, param, i, NULL);
-        RET_IF_ERROR(element < -32768 || element > 32767,
+        RET_IF_ERROR(element < -1024 || element > 1023,
                      "%s has out of range value", param);
         ch->m[i] = element;
         ch->rdiv += element;
