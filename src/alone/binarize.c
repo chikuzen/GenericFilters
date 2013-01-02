@@ -1,9 +1,9 @@
 /*
-  binarize.c: Copyright (C) 2012  Oka Motofumi
+  binarize.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -36,13 +36,13 @@ static void VS_CC set_lut(alone_t *ah, int thresh, uint16_t val0, uint16_t val1)
 
 
 static void VS_CC
-set_binarize_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_binarize_data(generic_handler_t *gh, filter_id_t id, char *msg,
                   const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    RET_IF_ERROR(!th->vi->format, "format is not constant");
+    RET_IF_ERROR(!gh->vi->format, "format is not constant");
 
     int err;
-    int max = (1 << th->vi->format->bitsPerSample) - 1;
+    int max = (1 << gh->vi->format->bitsPerSample) - 1;
     int thresh = (int)vsapi->propGetInt(in, "threshold", 0, &err);
     if (err || thresh < 0 || thresh > max) {
         thresh = max / 2 + 1;
@@ -58,10 +58,10 @@ set_binarize_data(tweak_handler_t *th, filter_id_t id, char *msg,
         val1 = max;
     }
 
-    const char *ret = set_alone(th);
+    const char *ret = set_alone(gh);
     RET_IF_ERROR(ret, "%s", ret);
 
-    set_lut((alone_t *)th->fdata, thresh, val0, val1);
+    set_lut((alone_t *)gh->fdata, thresh, val0, val1);
 }
 
 

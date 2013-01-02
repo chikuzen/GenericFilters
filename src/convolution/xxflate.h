@@ -1,9 +1,9 @@
 /*
-  xxflate.h: Copyright (C) 2012  Oka Motofumi
+  xxflate.h: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

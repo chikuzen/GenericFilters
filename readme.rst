@@ -1,34 +1,42 @@
-==========================
-Tweak - VapourSynth plugin
-==========================
+===================================
+GenericFilters - VapourSynth plugin
+===================================
+
+This plugins is a set of common image-processing filters.
 
 This plugin modifies all pixel values with various algorithms.
 
 All functions support 8/9/10/16bit planar formats.
 
-Currently, Tweak has eleven functions as follows.
+Currently, GenericFilters has eleven functions as follows.
 
 Minimum:
 --------
 Replaces the pixel by the local(3x3) minimum.::
 
-    tweak.Minimum(clip clip[, int[] planes])
+    tweak.Minimum(clip clip[, int[] planes, int threshold])
 
-planes - Choose which planes to process. default will process all planes.
-          Allowed values are 0, 1, and 2.
-          0 = Y (luma) or R (red)
-          1 = U (Cb)   or G (green)
-          2 = V (Cr)   or B (blue)
-          examples: planes=[0]    = processes the Y or R plane only.
-                    planes=[1,2]  = processes the U V or G B planes only.
+planes - Choose which planes to process. default will process all planes. Allowed values are 0, 1, and 2.::
+
+    0 = Y (luma) or R (red)
+    1 = U (Cb)   or G (green)
+    2 = V (Cr)   or B (blue)
+
+    examples
+    planes=[0]    = processes the Y or R plane only.
+    planes=[1,2]  = processes the U V or G B planes only.
+
+threshold - Allows to limit the maximum change. default is 65535.
 
 Maximum:
 --------
 Replaces the pixel by the local(3x3) maximum.::
 
-    tweak.Maximum(clip clip[, int[] planes])
+    tweak.Maximum(clip clip[, int[] planes, int threshold])
 
 planes - same as Minimum.
+
+threshold - same as Minimum.
 
 Median:
 -------
@@ -40,7 +48,7 @@ planes - same as Minimum.
 
 Convolution:
 ------------
-General spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
+Spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
 
     tweak.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
 
@@ -76,17 +84,21 @@ Inflate:
 --------
 Local(3x3) average by taking into account only values higher than the pixel.::
 
-    tweak.Inflate(clip clip[, int threshold, int[] planes])
+    tweak.Inflate(clip clip[, int threshold, int[] planes, int threshold])
 
-threshold - Allows to limit the maximum change. default is 65535.
+planes - same as Minimum.
+
+threshold - same as Minimum.
 
 Deflate:
 --------
 Local(3x3) average by taking into account only values lower than the pixel.::
 
-    tweak.Deflate(clip clip[, int thresh, int[] planes])
+    tweak.Deflate(clip clip[, int thresh, int[] planes, int threshold])
 
-threshold - Allows to limit the maximum change.  default is 65535.
+planes - same as Minimum.
+
+threshold - same as Minimum.
 
 Invert:
 -------
@@ -136,11 +148,11 @@ Binarize the pixel value.::
 
     tweak.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
 
-thresh - threshold. default is half of the maximum of input format(128, 256, 512 or 32768).
+threshold - threshold. default is half of the maximum of input format(128, 256, 512 or 32768).
 
-v0 - If the value of pixel is lower than thresh, output will be this. Default is 0.
+v0 - If the value of pixel is lower than threshold, output will be this. Default is 0.
 
-v1 - If the value of pixel is same or higher than thresh, output will be this. Default is the maximum value of input(255, 511, 1023 or 65535).
+v1 - If the value of pixel is same or higher than threshold, output will be this. Default is the maximum value of input(255, 511, 1023 or 65535).
 
 planes - same as Minimum.
 
@@ -148,18 +160,20 @@ Examples:
 ---------
     >>> import vapoursynth as vs
     >>> core = vs.Core()
-    >>> core.std.LoadPlugin('/path/to/tweak.dll')
+    >>> core.std.LoadPlugin('/path/to/genericfilters.dll')
+    >>> std = core.std
+    >>> generic = core.generic
     >>> clip = something
 
     - blur(5x5) only Y(or R) plane:
     >>> matrix = [10, 10, 16, 10, 10]
-    >>> blured = core.tweak.ConvolutionHV(clip, matrix, matrix, planes=0)
+    >>> blured = generic.ConvolutionHV(clip, matrix, matrix, planes=0)
 
     - Displacement UV(or GB) planes by quarter sample up:
     >>> matrix = [1,
                   3,
                   0]
-    >>> clip = core.tweak.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
+    >>> clip = generic.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
 
     - Edge detection with Sobel operator:
     >>> import math
@@ -171,27 +185,29 @@ Examples:
     ...     return lut
     ...
     >>> clip = core.resize.Point(clip, format=vs.GRAY8)
-    >>> edge_h = core.tweak.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
-    >>> edge_v = core.tweak.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
-    >>> clip = core.std.Lut2([edge_h, edge_v], get_lut(16), 0)
-    >>> clip = core.tweak.Binarize(clip, 10) # binarize edge mask
-    >>> clip = core.tweak.Invert(clip) # invert edge mask
+    >>> edge_h = generic.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
+    >>> edge_v = generic.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
+    >>> clip = std.Lut2([edge_h, edge_v], get_lut(16), 0)
+    >>> clip = generic.Binarize(clip, 10) # binarize edge mask
+    >>> clip = generic.Invert(clip) # invert edge mask
 
     - Convert TV levels to PC levels:
-    >>> y = core.tweak.levels(clip, 16, 236, 1.0, 0, 255, 0)
-    >>> uv = core.tweak.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
-    >>> clip = core.std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
+    >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)
+    >>> uv = generic.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
+    >>> clip = std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
 
 Note:
 -----
     If input clip has some frames which sample types are float, those will not be processed.
 
+    In the case format is 9/10/16bit, Convolution/ConvolutionHV does not clamp output values. Thus, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
+
 How to compile:
 ---------------
     on unix like system(include mingw), type as follows::
 
-    $ git clone git://github.com/chikuzen/tweak.git
-    $ cd ./tweak/src
+    $ git clone git://github.com/chikuzen/GenericFilters.git
+    $ cd ./GenericFilters/src
     $ ./configure
     $ make install
 
@@ -202,7 +218,7 @@ How to compile:
 
 Source code:
 ------------
-https://github.com/chikuzen/tweak
+https://github.com/chikuzen/GenericFilters
 
 
 Author: Oka Motofumi (chikuzen.mo at gmail dot com)

@@ -1,9 +1,9 @@
 /*
-  median_sse2.c: Copyright (C) 2012  Oka Motofumi
+  median_sse2.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,7 @@
 }
 
 
-static void TWK_FUNC_ALIGN VS_CC
+static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                uint8_t *dstp, const uint8_t *srcp, int th)
 {
@@ -109,7 +109,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 }
 
 
-static void TWK_FUNC_ALIGN VS_CC
+static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 uint8_t *d, const uint8_t *s, int th)
 {

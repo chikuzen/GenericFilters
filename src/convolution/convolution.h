@@ -3,7 +3,7 @@
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of Generic.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public

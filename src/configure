@@ -121,16 +121,16 @@ else
 fi
 case "$TARGET_OS" in
     *mingw*)
-        LIBNAME="tweak.dll"
+        LIBNAME="genericfilters.dll"
         LDFLAGS="$LDFLAGS -Wl,--dll,--add-stdcall-alias"
         ;;
     *linux*)
-        LIBNAME="libtweak.so"
+        LIBNAME="libgenericfilters.so"
         CFLAGS="$CFLAGS -fPIC"
         LDFLAGS="-fPIC $LDFLAGS"
         ;;
     *darwin*)
-        LIBNAME="libtweak.dylib"
+        LIBNAME="libgenericfilters.dylib"
         test -n "$STRIP" && STRIP="$STRIP -x"
         LDFLAGS="$LDFLAGS -dynamiclib -Wl,-undefined,suppress -Wl,-read_only_relocs,suppress -Wl,-flat_namespace"
         echo "The autor has no Mac environment. Thus, this script has not tested. May the force be with you."

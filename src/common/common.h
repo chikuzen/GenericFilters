@@ -1,5 +1,5 @@
-#ifndef TWEAK_COMMON_H
-#define TWEAK_COMMON_H
+#ifndef GENERIC_COMMON_H
+#define GENERIC_COMMON_H
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -10,12 +10,12 @@
 #define snprintf _snprintf
 #endif
 
-#define TWEAK_PLUGIN_VERSION "0.1.0"
+#define GENERIC_FILTERS_VERSION "0.1.0"
 
 
-typedef struct tweak_handler tweak_handler_t;
+typedef struct generic_handler generic_handler_t;
 
-struct tweak_handler {
+struct generic_handler {
     VSNodeRef *node;
     const VSVideoInfo *vi;
     int planes[3];
@@ -42,7 +42,7 @@ typedef enum {
 } filter_id_t;
 
 
-typedef void (VS_CC *set_filter_data_func)(tweak_handler_t *th,
+typedef void (VS_CC *set_filter_data_func)(generic_handler_t *gh,
                                             filter_id_t id, char *msg,
                                             const VSMap *in, VSMap *out,
                                             const VSAPI *vsapi);
@@ -51,7 +51,7 @@ extern const set_filter_data_func set_convolution;
 extern const set_filter_data_func set_convolution_hv;
 extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;
-extern const set_filter_data_func set_limitter;
+extern const set_filter_data_func set_limiter;
 extern const set_filter_data_func set_levels;
 extern const set_filter_data_func set_xxflate;
 extern const set_filter_data_func set_binarize;
@@ -82,4 +82,4 @@ static inline void _aligned_free(void *p)
     } \
 }
 
-#endif // TWEAK_COMMON_H
+#endif // GENERIC_COMMON_H

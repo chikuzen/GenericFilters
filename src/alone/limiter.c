@@ -1,9 +1,9 @@
 /*
-  limiter.c: Copyright (C) 2012  Oka Motofumi
+  limiter.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -37,10 +37,10 @@ static void VS_CC set_lut(alone_t *ah, int min, int max)
 
 
 static void VS_CC
-set_limiter_data(tweak_handler_t *th, filter_id_t id, char *msg,
-                  const VSMap *in, VSMap *out, const VSAPI *vsapi)
+set_limiter_data(generic_handler_t *gh, filter_id_t id, char *msg,
+                 const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    RET_IF_ERROR(!th->vi->format, "format is not constant");
+    RET_IF_ERROR(!gh->vi->format, "format is not constant");
 
     int err;
 
@@ -49,7 +49,7 @@ set_limiter_data(tweak_handler_t *th, filter_id_t id, char *msg,
         th_min = 0;
     }
 
-    int max = (1 << th->vi->format->bitsPerSample) - 1;
+    int max = (1 << gh->vi->format->bitsPerSample) - 1;
     int th_max = (int)vsapi->propGetInt(in, "max", 0, &err);
     if (err || th_max > max) {
         th_max = max;
@@ -57,9 +57,9 @@ set_limiter_data(tweak_handler_t *th, filter_id_t id, char *msg,
 
     RET_IF_ERROR(th_min > th_max, "min is larger than max");
 
-    const char *ret = set_alone(th);
+    const char *ret = set_alone(gh);
     RET_IF_ERROR(ret, "%s", ret);
-    alone_t *ah = (alone_t *)th->fdata;
+    alone_t *ah = (alone_t *)gh->fdata;
 
     set_lut(ah, th_min, th_max);
 }

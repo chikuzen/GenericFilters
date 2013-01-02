@@ -1,9 +1,9 @@
 /*
-  convolution_hv.c: Copyright (C) 2012  Oka Motofumi
+  convolution_hv.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -97,12 +97,12 @@ set_matrix(convolution_hv_t *ch, const VSMap *in, const VSAPI *vsapi, char *msg)
 
 
 static void VS_CC
-set_convolution_hv_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_convolution_hv_data(generic_handler_t *gh, filter_id_t id, char *msg,
                         const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
     convolution_hv_t *ch = (convolution_hv_t *)calloc(sizeof(convolution_hv_t), 1);
     RET_IF_ERROR(!ch, "failed to allocate filter data");
-    th->fdata = ch;
+    gh->fdata = ch;
 
     set_matrix(ch, in, vsapi, msg);
     RET_IF_ERROR(msg[0], " ");
@@ -114,7 +114,7 @@ set_convolution_hv_data(tweak_handler_t *th, filter_id_t id, char *msg,
     }
 
     ch->function = convo_hv5;
-    th->get_frame_filter = convolution_hv_get_frame;
+    gh->get_frame_filter = convolution_hv_get_frame;
 }
 
 const set_filter_data_func set_convolution_hv = set_convolution_hv_data;

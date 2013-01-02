@@ -1,9 +1,9 @@
 /*
-  alone.c: Copyright (C) 2012  Oka Motofumi
+  alone.h: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@
 
 typedef struct filter_data alone_t;
 
-typedef const char * (VS_CC *set_alone_handler_func)(tweak_handler_t *);
+typedef const char * (VS_CC *set_alone_handler_func)(generic_handler_t *);
 
 struct filter_data {
     size_t lut_size;

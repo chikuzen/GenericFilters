@@ -1,9 +1,9 @@
 /*
-  neighbors.c: Copyright (C) 2012  Oka Motofumi
+  neighbors.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -61,12 +61,12 @@ neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
 
 
 static void VS_CC
-set_neighbors_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_neighbors_data(generic_handler_t *gh, filter_id_t id, char *msg,
                    const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
     neighbors_t *nh = (neighbors_t *)calloc(sizeof(neighbors_t), 1);
     RET_IF_ERROR(!nh, "failed to allocate filter data");
-    th->fdata = nh;
+    gh->fdata = nh;
 
     switch (id) {
     case ID_MAXIMUM:
@@ -81,11 +81,11 @@ set_neighbors_data(tweak_handler_t *th, filter_id_t id, char *msg,
 
     int err;
     nh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
-    if (err || nh->th < 0 || nh->th > 0xFF) {
-        nh->th = 0xFF;
+    if (err || nh->th < 0 || nh->th > 0xFFFF) {
+        nh->th = 0xFFFF;
     }
 
-    th->get_frame_filter = neighbors_get_frame;
+    gh->get_frame_filter = neighbors_get_frame;
 }
 
 

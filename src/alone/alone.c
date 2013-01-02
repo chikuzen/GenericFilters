@@ -1,9 +1,9 @@
 /*
-  alone.c: Copyright (C) 2012  Oka Motofumi
+  alone.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -79,17 +79,17 @@ static void VS_CC alone_free_data(void *data)
 }
 
 
-static const char * VS_CC set_alone_handler(tweak_handler_t *th)
+static const char * VS_CC set_alone_handler(generic_handler_t *gh)
 {
     alone_t *ah = (alone_t *)calloc(sizeof(alone_t), 1);
     if (!ah) {
         return "failed to allocate handler";
     }
 
-    th->fdata = ah;
-    th->free_data = alone_free_data;
-    th->get_frame_filter = alone_get_frame;
-    ah->lut_size = 1 << (8 * th->vi->format->bytesPerSample);
+    gh->fdata = ah;
+    gh->free_data = alone_free_data;
+    gh->get_frame_filter = alone_get_frame;
+    ah->lut_size = 1 << (8 * gh->vi->format->bytesPerSample);
     ah->lut = (uint16_t *)malloc(sizeof(uint16_t) * ah->lut_size);
     if (!ah->lut) {
         return "out of memory";

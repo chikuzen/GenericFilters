@@ -1,9 +1,9 @@
 /*
-  common.c: Copyright (C) 2012  Oka Motofumi
+  common.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -32,10 +32,10 @@ get_frame_common(int n, int activation_reason, void **instance_data,
                  void **frame_data, VSFrameContext *frame_ctx, VSCore *core,
                  const VSAPI *vsapi)
 {
-    tweak_handler_t *th = (tweak_handler_t *)*instance_data;
+    generic_handler_t *gh = (generic_handler_t *)*instance_data;
 
     if (activation_reason == arInitial) {
-        vsapi->requestFrameFilter(n, th->node, frame_ctx);
+        vsapi->requestFrameFilter(n, gh->node, frame_ctx);
         return NULL;
     }
 
@@ -43,20 +43,20 @@ get_frame_common(int n, int activation_reason, void **instance_data,
         return NULL;
     }
 
-    const VSFrameRef *src = vsapi->getFrameFilter(n, th->node, frame_ctx);
+    const VSFrameRef *src = vsapi->getFrameFilter(n, gh->node, frame_ctx);
     const VSFormat *fi = vsapi->getFrameFormat(src);
     if (fi->sampleType != stInteger) {
         return src;
     }
     const int pl[] = {0, 1, 2};
-    const VSFrameRef *fr[] = {th->planes[0] ? NULL : src,
-                              th->planes[1] ? NULL : src,
-                              th->planes[2] ? NULL : src};
+    const VSFrameRef *fr[] = {gh->planes[0] ? NULL : src,
+                              gh->planes[1] ? NULL : src,
+                              gh->planes[2] ? NULL : src};
     VSFrameRef *dst = vsapi->newVideoFrame2(fi, vsapi->getFrameWidth(src, 0),
                                             vsapi->getFrameHeight(src, 0),
                                             fr, pl, src, core);
 
-    th->get_frame_filter(th->fdata, fi, fr, vsapi, src, dst);
+    gh->get_frame_filter(gh->fdata, fi, fr, vsapi, src, dst);
 
     vsapi->freeFrame(src);
 
@@ -68,8 +68,8 @@ static void VS_CC
 vs_init(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
         VSCore *core, const VSAPI *vsapi)
 {
-    tweak_handler_t *th = (tweak_handler_t *)*instance_data;
-    vsapi->setVideoInfo(th->vi, 1, node);
+    generic_handler_t *gh = (generic_handler_t *)*instance_data;
+    vsapi->setVideoInfo(gh->vi, 1, node);
     vsapi->clearMap(in);
 }
 
@@ -77,32 +77,32 @@ vs_init(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
 static void VS_CC
 close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
 {
-    tweak_handler_t *th = (tweak_handler_t *)instance_data;
-    if (!th) {
+    generic_handler_t *gh = (generic_handler_t *)instance_data;
+    if (!gh) {
         return;
     }
-    if (th->node) {
-        vsapi->freeNode(th->node);
-        th->node = NULL;
+    if (gh->node) {
+        vsapi->freeNode(gh->node);
+        gh->node = NULL;
     }
-    if (th->fdata) {
-        if (th->free_data) {
-            th->free_data(th->fdata);
+    if (gh->fdata) {
+        if (gh->free_data) {
+            gh->free_data(gh->fdata);
         }
-        free(th->fdata);
-        th->fdata = NULL;
+        free(gh->fdata);
+        gh->fdata = NULL;
     }
-    free(th);
-    th = NULL;
+    free(gh);
+    gh = NULL;
 }
 
 
 static int VS_CC
-set_planes(tweak_handler_t *th, const VSMap *in, const VSAPI *vsapi)
+set_planes(generic_handler_t *gh, const VSMap *in, const VSAPI *vsapi)
 {
     int num = vsapi->propNumElements(in, "planes");
     if (num < 1) {
-        for (int i = 0; i < 3; th->planes[i++] = 1);
+        for (int i = 0; i < 3; gh->planes[i++] = 1);
         return 0;
     }
 
@@ -111,7 +111,7 @@ set_planes(tweak_handler_t *th, const VSMap *in, const VSAPI *vsapi)
         if (p < 0 || p > 2) {
             return -1;
         }
-        th->planes[p] = 1;
+        gh->planes[p] = 1;
     }
 
     return 0;
@@ -157,7 +157,7 @@ static setter_t get_setter(const char *filter_name)
 
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
-        close_handler(th, core, vsapi); \
+        close_handler(gh, core, vsapi); \
         snprintf(msg, 240, __VA_ARGS__); \
         vsapi->setError(out, msg_buff); \
         return; \
@@ -173,21 +173,21 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
     snprintf(msg_buff, 256, "%s: ", filter_name);
     char *msg = msg_buff + strlen(msg_buff);
 
-    tweak_handler_t *th =
-        (tweak_handler_t *)calloc(sizeof(tweak_handler_t), 1);
-    RET_IF_ERROR(!th, "failed to allocate handler");
+    generic_handler_t *gh =
+        (generic_handler_t *)calloc(sizeof(generic_handler_t), 1);
+    RET_IF_ERROR(!gh, "failed to allocate handler");
 
-    th->node = vsapi->propGetNode(in, "clip", 0, 0);
-    th->vi = vsapi->getVideoInfo(th->node);
-    RET_IF_ERROR(set_planes(th, in, vsapi), "planes index out of range");
+    gh->node = vsapi->propGetNode(in, "clip", 0, 0);
+    gh->vi = vsapi->getVideoInfo(gh->node);
+    RET_IF_ERROR(set_planes(gh, in, vsapi), "planes index out of range");
 
     setter_t setter = get_setter(filter_name);
     RET_IF_ERROR(setter.id == ID_NONE, "initialize failed");
-    setter.function(th, setter.id, msg, in, out, vsapi);
+    setter.function(gh, setter.id, msg, in, out, vsapi);
     RET_IF_ERROR(msg[0], " ");
 
     vsapi->createFilter(in, out, filter_name, vs_init, get_frame_common,
-                        close_handler, fmParallel, 0, th, core);
+                        close_handler, fmParallel, 0, gh, core);
 }
 #undef RET_IF_ERROR
 
@@ -196,9 +196,9 @@ VS_EXTERNAL_API(void)
 VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
                       VSPlugin *plugin)
 {
-    conf("chikuzen.does.not.have.his.own.domain.tweak", "tweak",
-         "Pixel value modifier with various algorithm v"
-         TWEAK_PLUGIN_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
+    conf("chikuzen.does.not.have.his.own.domain.genericfilters", "generic",
+         "Set of common image-processing filters v"
+         GENERIC_FILTERS_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
     reg("Convolution",
         "clip:clip;matrix:int[]:opt;bias:float:opt;divisor:float:opt;"
         "planes:int[]:opt;mode:data:opt;",
@@ -222,9 +222,9 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "clip:clip;min_in:int[]:opt;max_in:int[]:opt;gamma:float:opt;"
         "min_out:int:opt;max_out:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Levels", plugin);
-    reg("Inflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
+    reg("Inflate", "clip:clip;planes:int[]:opt;threshold:int:opt;",
         create_filter_common, (void *)"Inflate", plugin);
-    reg("Deflate", "clip:clip;threshold:int:opt;planes:int[]:opt;",
+    reg("Deflate", "clip:clip;planes:int[]:opt;threshold:int:opt;",
         create_filter_common, (void *)"Deflate", plugin);
     reg("Binarize",
         "clip:clip;threshold:int:opt;v0:int:opt;v1:int:opt;planes:int[]:opt;",

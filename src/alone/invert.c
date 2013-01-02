@@ -1,9 +1,9 @@
 /*
-  invert.c: Copyright (C) 2012  Oka Motofumi
+  invert.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -61,10 +61,10 @@ invert_get_frame(struct filter_data *fd, const VSFormat *fi,
 
 
 static void VS_CC
-set_invert_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_invert_data(generic_handler_t *gh, filter_id_t id, char *msg,
                 const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    th->get_frame_filter = invert_get_frame;
+    gh->get_frame_filter = invert_get_frame;
 }
 
 

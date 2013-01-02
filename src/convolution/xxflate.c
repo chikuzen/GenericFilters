@@ -1,9 +1,9 @@
 /*
-  convolution.c: Copyright (C) 2012  Oka Motofumi
+  convolution.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak.
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -63,12 +63,12 @@ xxflate_get_frame(xxflate_t *xh, const VSFormat *fi, const VSFrameRef **fr,
 
 
 static void VS_CC
-set_xxflate_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_xxflate_data(generic_handler_t *gh, filter_id_t id, char *msg,
                  const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
     xxflate_t *xh = (xxflate_t *)calloc(sizeof(xxflate_t), 1);
     RET_IF_ERROR(!xh, "failed to allocate filter data");
-    th->fdata = xh;
+    gh->fdata = xh;
 
     int err;
     xh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
@@ -78,7 +78,7 @@ set_xxflate_data(tweak_handler_t *th, filter_id_t id, char *msg,
 
     xh->function = id == ID_INFLATE ? inflate : deflate;
 
-    th->get_frame_filter = xxflate_get_frame;
+    gh->get_frame_filter = xxflate_get_frame;
 }
 
 

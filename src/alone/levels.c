@@ -1,9 +1,9 @@
 /*
-  levels.c: Copyright (C) 2012  Oka Motofumi
+  levels.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
-  This file is part of Tweak
+  This file is part of GenericFilters.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -38,17 +38,17 @@ set_lut(int imin, int imax, int omin, int omax, double gamma, int size,
 
 
 static void VS_CC
-set_levels_data(tweak_handler_t *th, filter_id_t id, char *msg, const VSMap *in,
-         VSMap *out, const VSAPI *vsapi)
+set_levels_data(generic_handler_t *gh, filter_id_t id, char *msg,
+                const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
-    RET_IF_ERROR(!th->vi->format, "format is not constant");
+    RET_IF_ERROR(!gh->vi->format, "format is not constant");
 
-    const char *ret = set_alone(th);
+    const char *ret = set_alone(gh);
     RET_IF_ERROR(ret, "%s", ret);
-    alone_t *ah = (alone_t *)th->fdata;
+    alone_t *ah = (alone_t *)gh->fdata;
 
     int err;
-    int bps = th->vi->format->bitsPerSample;
+    int bps = gh->vi->format->bitsPerSample;
     int size = 1 << bps;
     int imin = (int)vsapi->propGetInt(in, "min_in", 0, &err);
     if (err || imin < 0) {
