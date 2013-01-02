@@ -14,7 +14,7 @@ Minimum:
 --------
 Replaces the pixel by the local(3x3) minimum.::
 
-    tweak.Minimum(clip clip[, int[] planes, int threshold])
+    generic.Minimum(clip clip[, int[] planes, int threshold])
 
 planes - Choose which planes to process. default will process all planes. Allowed values are 0, 1, and 2.::
 
@@ -32,7 +32,7 @@ Maximum:
 --------
 Replaces the pixel by the local(3x3) maximum.::
 
-    tweak.Maximum(clip clip[, int[] planes, int threshold])
+    generic.Maximum(clip clip[, int[] planes, int threshold])
 
 planes - same as Minimum.
 
@@ -42,7 +42,7 @@ Median:
 -------
 Replaces the pixel by the local(3x3) median.::
 
-    tweak.Median(clip clip[, int[] planes])
+    generic.Median(clip clip[, int[] planes])
 
 planes - same as Minimum.
 
@@ -50,7 +50,7 @@ Convolution:
 ------------
 Spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
 
-    tweak.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
+    generic.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
 
 matrix - can be a matrix with 3, 5, 9 or 25 integer numbers. default is [0, 0, 0, 0, 1, 0, 0, 0, 0].
 
@@ -66,7 +66,7 @@ ConvolutionHV:
 --------------
 It performs vertical 5 convolution first and then performs horizontal 5 convolution (faster than 5x5 convolution).::
 
-    tweak.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
+    generic.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
 
 horizontal - horizontal matrix. the length must be five. default is [0, 0, 1, 0, 0].
 
@@ -84,7 +84,7 @@ Inflate:
 --------
 Local(3x3) average by taking into account only values higher than the pixel.::
 
-    tweak.Inflate(clip clip[, int threshold, int[] planes, int threshold])
+    generic.Inflate(clip clip[, int threshold, int[] planes, int threshold])
 
 planes - same as Minimum.
 
@@ -94,7 +94,7 @@ Deflate:
 --------
 Local(3x3) average by taking into account only values lower than the pixel.::
 
-    tweak.Deflate(clip clip[, int thresh, int[] planes, int threshold])
+    generic.Deflate(clip clip[, int thresh, int[] planes, int threshold])
 
 planes - same as Minimum.
 
@@ -104,15 +104,15 @@ Invert:
 -------
 Invert the pixel value.::
 
-    tweak.Invert(clip clip[, int[] planes])
+    generic.Invert(clip clip[, int[] planes])
 
 planes - same as Minimum.
 
-Limitter:
+Limiter:
 ---------
 Clamp the pixel value.::
 
-    tweak.Limitter(clip clip[, int min, int max, int[] planes])
+    generic.Limiter(clip clip[, int min, int max, int[] planes])
 
 min - minimum threshold of pixel value. default is 0.
 
@@ -124,7 +124,7 @@ Levels:
 -------
 Adjusts brightness, contrast, and gamma.::
 
-    tweak.Levels(clip clip[, int min_in, int max_in, float gamma, int min_out, int max_out])
+    generic.Levels(clip clip[, int min_in, int max_in, float gamma, int min_out, int max_out])
 
 min_in - determine minimum input pixel value. default is 0.
 
@@ -146,7 +146,7 @@ Binarize:
 ---------
 Binarize the pixel value.::
 
-    tweak.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
+    generic.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
 
 threshold - threshold. default is half of the maximum of input format(128, 256, 512 or 32768).
 
