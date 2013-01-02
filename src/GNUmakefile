@@ -5,8 +5,8 @@ vpath %.h $(SRCDIR)
 
 SRCS = convolution/convolution.c  convolution/proc_3x3_sse2.c convolution/proc_5x5_sse2.c \
        convolution/proc_h_sse2.c  convolution/proc_v_sse2.c   convolution/convolution_hv.c \
-       convolution/proc_hv_sse2.c convolution/xxflate.c       convolution/inflate.c \
-       convolution/deflate.c      neighbors/maximum_sse2.c    neighbors/median_sse2.c \
+       convolution/proc_hv_sse2.c convolution/xxflate.c       convolution/inflate_sse2.c \
+       convolution/deflate_sse2.c neighbors/maximum_sse2.c    neighbors/median_sse2.c \
        neighbors/minimum_sse2.c   neighbors/neighbors.c       alone/invert.c \
        alone/limitter.c           alone/levels.c              alone/binarize.c \
        alone/alone.c              common/common.c

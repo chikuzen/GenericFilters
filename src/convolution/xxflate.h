@@ -28,7 +28,8 @@
 #include "VapourSynth.h"
 
 
-typedef void (VS_CC *proc_xxflate)(int, int, int, uint8_t *, const uint8_t *, int);
+typedef void (VS_CC *proc_xxflate)(uint8_t *, int, int, int, int, uint8_t *,
+                                    const uint8_t *, int);
 
 typedef struct filter_data {
     const proc_xxflate *function;

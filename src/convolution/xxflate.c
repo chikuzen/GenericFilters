@@ -22,6 +22,8 @@
 
 
 #include <stdlib.h>
+
+#define USE_ALIGNED_MALLOC
 #include "common.h"
 #include "xxflate.h"
 
@@ -30,7 +32,14 @@ static void VS_CC
 xxflate_get_frame(xxflate_t *xh, const VSFormat *fi, const VSFrameRef **fr,
                   const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
 {
-    int index = fi->bytesPerSample - 1;
+    int bps = fi->bytesPerSample;
+    int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
+    uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 3, 16);
+    if (!buff) {
+        return;
+    }
+
+    bps--;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
@@ -42,12 +51,14 @@ xxflate_get_frame(xxflate_t *xh, const VSFormat *fi, const VSFrameRef **fr,
             continue;
         }
 
-        xh->function[index](width - 1, height - 1,
-                            vsapi->getStride(src, plane),
-                            vsapi->getWritePtr(dst, plane),
-                            vsapi->getReadPtr(src, plane),
-                            xh->th);
+        xh->function[bps](buff, bstride, width, height,
+                          vsapi->getStride(src, plane),
+                          vsapi->getWritePtr(dst, plane),
+                          vsapi->getReadPtr(src, plane),
+                          xh->th);
     }
+
+    _aligned_free(buff);
 }
 
 
@@ -60,8 +71,8 @@ set_xxflate_data(tweak_handler_t *th, filter_id_t id, char *msg,
     th->fdata = xh;
 
     int err;
-    xh->th = (int)vsapi->propGetInt(in, "thresh", 0, &err);
-    if (err || xh->th > 0xFFFF) {
+    xh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
+    if (err || xh->th > 0xFFFF || xh->th < 0) {
         xh->th = 0xFFFF;
     }
 
