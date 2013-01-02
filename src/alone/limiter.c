@@ -1,5 +1,5 @@
 /*
-  limitter.c: Copyright (C) 2012  Oka Motofumi
+  limiter.c: Copyright (C) 2012  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
@@ -37,7 +37,7 @@ static void VS_CC set_lut(alone_t *ah, int min, int max)
 
 
 static void VS_CC
-set_limitter_data(tweak_handler_t *th, filter_id_t id, char *msg,
+set_limiter_data(tweak_handler_t *th, filter_id_t id, char *msg,
                   const VSMap *in, VSMap *out, const VSAPI *vsapi)
 {
     RET_IF_ERROR(!th->vi->format, "format is not constant");
@@ -65,4 +65,4 @@ set_limitter_data(tweak_handler_t *th, filter_id_t id, char *msg,
 }
 
 
-const set_filter_data_func set_limitter = set_limitter_data;
+const set_filter_data_func set_limiter = set_limiter_data;

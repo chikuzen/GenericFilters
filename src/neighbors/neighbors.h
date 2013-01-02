@@ -29,10 +29,11 @@
 
 
 typedef void (VS_CC *proc_neighbors)(uint8_t *, int, int, int, int, uint8_t *,
-                                      const uint8_t *);
+                                      const uint8_t *, int);
 
 typedef struct filter_data {
     const proc_neighbors *function;
+    int th;
 } neighbors_t;
 
 

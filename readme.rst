@@ -76,9 +76,9 @@ Inflate:
 --------
 Local(3x3) average by taking into account only values higher than the pixel.::
 
-    tweak.Inflate(clip clip[, int thresh, int[] planes])
+    tweak.Inflate(clip clip[, int threshold, int[] planes])
 
-thresh - The neighbouring pixels higher than this value are ignored.
+threshold - Allows to limit the maximum change. default is 65535.
 
 Deflate:
 --------
@@ -86,7 +86,7 @@ Local(3x3) average by taking into account only values lower than the pixel.::
 
     tweak.Deflate(clip clip[, int thresh, int[] planes])
 
-thresh - The neighbouring pixels lower than this value are ignored.
+threshold - Allows to limit the maximum change.  default is 65535.
 
 Invert:
 -------

@@ -52,7 +52,8 @@ neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
                           vsapi->getFrameHeight(src, plane),
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
-                          vsapi->getReadPtr(src, plane));
+                          vsapi->getReadPtr(src, plane),
+                          nh->th);
     }
 
     _aligned_free(buff);
@@ -76,6 +77,12 @@ set_neighbors_data(tweak_handler_t *th, filter_id_t id, char *msg,
         break;
     default:
         nh->function = minimum;
+    }
+
+    int err;
+    nh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
+    if (err || nh->th < 0 || nh->th > 0xFF) {
+        nh->th = 0xFF;
     }
 
     th->get_frame_filter = neighbors_get_frame;

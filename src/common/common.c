@@ -136,7 +136,7 @@ static setter_t get_setter(const char *filter_name)
         { "Median",        { set_neighbors,      ID_MEDIAN   } },
         { "Minimum",       { set_neighbors,      ID_MINIMUM  } },
         { "Invert",        { set_invert,         ID_INVERT   } },
-        { "Limitter",      { set_limitter,       ID_LIMITTER } },
+        { "Limiter",       { set_limiter,        ID_LIMITER  } },
         { "Levels",        { set_levels,         ID_LEVELS   } },
         { "Inflate",       { set_xxflate,        ID_INFLATE  } },
         { "Deflate",       { set_xxflate,        ID_DEFLATE  } },
@@ -207,17 +207,17 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;",
         create_filter_common, (void *)"ConvolutionHV", plugin);
-    reg("Minimum", "clip:clip;planes:int[]:opt;",
+    reg("Minimum", "clip:clip;planes:int[]:opt;threshold:int:opt;",
         create_filter_common, (void *)"Minimum", plugin);
-    reg("Maximum", "clip:clip;planes:int[]:opt;",
+    reg("Maximum", "clip:clip;planes:int[]:opt;threshold:int:opt;",
         create_filter_common, (void *)"Maximum", plugin);
     reg("Median", "clip:clip;planes:int[]:opt;",
         create_filter_common, (void *)"Median", plugin);
     reg("Invert", "clip:clip;planes:int[]:opt;",
         create_filter_common, (void *)"Invert", plugin);
-    reg("Limitter",
+    reg("Limiter",
         "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
-        create_filter_common, (void *)"Limitter", plugin);
+        create_filter_common, (void *)"Limiter", plugin);
     reg("Levels",
         "clip:clip;min_in:int[]:opt;max_in:int[]:opt;gamma:float:opt;"
         "min_out:int:opt;max_out:int:opt;planes:int[]:opt;",

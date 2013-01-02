@@ -34,7 +34,7 @@ typedef enum {
     ID_MEDIAN,
     ID_MINIMUM,
     ID_INVERT,
-    ID_LIMITTER,
+    ID_LIMITER,
     ID_LEVELS,
     ID_INFLATE,
     ID_DEFLATE,
