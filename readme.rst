@@ -2,7 +2,7 @@
 GenericFilters - VapourSynth plugin
 ===================================
 
-This plugins is a set of common image-processing filters.
+This plugin is a set of common image-processing filters.
 
 This plugin modifies all pixel values with various algorithms.
 
@@ -146,7 +146,7 @@ Binarize:
 ---------
 Binarize the pixel value.::
 
-    generic.Binarize(clip clip[, int thresh, inv v0, int v1, int[] planes])
+    generic.Binarize(clip clip[, int threshold, inv v0, int v1, int[] planes])
 
 threshold - threshold. default is half of the maximum of input format(128, 256, 512 or 32768).
 
@@ -193,7 +193,7 @@ Examples:
 
     - Convert TV levels to PC levels:
     >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)
-    >>> uv = generic.levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
+    >>> uv = generic.Levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
     >>> clip = std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
 
 Note:
