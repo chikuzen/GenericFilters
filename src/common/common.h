@@ -53,6 +53,8 @@ typedef enum {
     ID_NONE,
     ID_CONVO,
     ID_CONVO_HV,
+    ID_SOBEL,
+    ID_PREWITT,
     ID_MAXIMUM,
     ID_MEDIAN,
     ID_MINIMUM,
@@ -72,6 +74,7 @@ typedef void (VS_CC *set_filter_data_func)(generic_handler_t *gh,
 
 extern const set_filter_data_func set_convolution;
 extern const set_filter_data_func set_convolution_hv;
+extern const set_filter_data_func set_edge;
 extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;
 extern const set_filter_data_func set_limiter;

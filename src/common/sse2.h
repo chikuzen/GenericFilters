@@ -37,14 +37,23 @@
 #endif
 
 
+#define MM_MIN_EPU16(X, Y, Z) {\
+    Z = _mm_subs_epu16(X, Y);\
+    Z = _mm_subs_epu16(X, Z);\
+}
+
+#define MM_MAX_EPU16(X, Y, Z) {\
+    Z = _mm_subs_epu16(X, Y);\
+    Z = _mm_adds_epu16(Y, Z);\
+}
+
 static inline void VS_CC
 line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)
 {
-    int w = ((width + 15) / 16) * 16;
-    memcpy(line, srcp, w);
+    memcpy(line, srcp, width);
     for (int i = mergin; i > 0; i--) {
-        *(line - i) = *line;
-        *(line + width - 1 + i) = *(line + width - 1);
+        line[0 - i] = line[0];
+        line[width - 1 + i] = line[width - 1];
     }
 }
 
@@ -52,8 +61,7 @@ line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)
 static inline void VS_CC
 line_copy16(uint16_t *line, const uint16_t *srcp, int width, int mergin)
 {
-    int w = ((width * 2 + 15) / 16) * 16;
-    memcpy(line, srcp, w);
+    memcpy(line, srcp, width * 2);
     for (int i = mergin; i > 0; i--) {
         line[0 - i] = line[0];
         line[width + i - 1] = line[width - 1];

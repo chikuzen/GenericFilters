@@ -132,6 +132,9 @@ static setter_t get_setter(const char *filter_name)
     } table[] = {
         { "Convolution",   { set_convolution,    ID_CONVO    } },
         { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
+        { "Sobel",         { set_edge,           ID_SOBEL    } },
+        { "prewitt",       { set_edge,           ID_PREWITT  } },
+        { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
         { "Maximum",       { set_neighbors,      ID_MAXIMUM  } },
         { "Median",        { set_neighbors,      ID_MEDIAN   } },
         { "Minimum",       { set_neighbors,      ID_MINIMUM  } },
@@ -207,6 +210,10 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;",
         create_filter_common, (void *)"ConvolutionHV", plugin);
+    reg("Sobel", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Sobel", plugin);
+    reg("Prewitt", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Prewitt", plugin);
     reg("Minimum", "clip:clip;planes:int[]:opt;threshold:int:opt;",
         create_filter_common, (void *)"Minimum", plugin);
     reg("Maximum", "clip:clip;planes:int[]:opt;threshold:int:opt;",
