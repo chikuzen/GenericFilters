@@ -51,7 +51,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 p2 + x - 1, p2 + x, p2 + x + 1
             };
             
-            __m128i src = _mm_load_si128((__m128i *)(p0 + x - 1));
+            __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i min = src;
             
             for (int i = 0; i < 8; i++) {
