@@ -1,5 +1,5 @@
 /*
-  convolution.h: Copyright (C) 2012  Oka Motofumi
+  convolution.h: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
