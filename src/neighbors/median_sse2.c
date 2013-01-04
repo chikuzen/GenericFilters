@@ -37,7 +37,7 @@
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-               uint8_t *dstp, const uint8_t *srcp, int th)
+               uint8_t *dstp, const uint8_t *srcp, int th, int *enable)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -111,7 +111,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-                uint8_t *d, const uint8_t *s, int th)
+                uint8_t *d, const uint8_t *s, int th, int *enable)
 {
     stride >>= 1;
     uint16_t *dstp = (uint16_t *)d;

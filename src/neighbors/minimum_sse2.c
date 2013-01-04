@@ -29,7 +29,7 @@
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-               uint8_t *dstp, const uint8_t *srcp, int th)
+               uint8_t *dstp, const uint8_t *srcp, int th, int *enable)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -50,15 +50,17 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 p1 + x - 1,         p1 + x + 1,
                 p2 + x - 1, p2 + x, p2 + x + 1
             };
-            
+
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i min = src;
-            
+
             for (int i = 0; i < 8; i++) {
-                __m128i target = _mm_load_si128((__m128i *)coordinates[i]);
-                min = _mm_min_epu8(target, min);
+                if (enable[i]) {
+                    __m128i target = _mm_load_si128((__m128i *)coordinates[i]);
+                    min = _mm_min_epu8(target, min);
+                }
             }
-            
+
             __m128i thrs = _mm_subs_epu8(src, _mm_set1_epi8(threshold));
             src = _mm_max_epu8(min, thrs);
             _mm_store_si128((__m128i *)(dstp + x), src);
@@ -74,7 +76,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-                uint8_t *d, const uint8_t *s, int th)
+                uint8_t *d, const uint8_t *s, int th, int *enable)
 {
     stride >>= 1;
     uint16_t *dstp = (uint16_t *)d;
@@ -92,23 +94,25 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
-    
+
         for (int x = 0; x < width; x += 8) {
             uint16_t *coordinates[] = {
                 p0 + x - 1, p0 + x, p0 + x + 1,
                 p1 + x - 1,         p1 + x + 1,
                 p2 + x - 1, p2 + x, p2 + x + 1
             };
-            
+
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i min = src;
-            
+
             for (int i = 0; i < 8; i++) {
-                __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
-                target = _mm_subs_epu16(min, target);
-                min = _mm_subs_epu16(min, target);
+                if (enable[i]) {
+                    __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
+                    target = _mm_subs_epu16(min, target);
+                    min = _mm_subs_epu16(min, target);
+                }
             }
-            
+
             __m128i thrs = _mm_subs_epu16(src, _mm_set1_epi16(threshold));
             src = _mm_subs_epu16(min, thrs);
             min = _mm_adds_epu16(src, thrs);

@@ -97,13 +97,9 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 sum[1] = _mm_packs_epi32(sum[2], sum[3]);
                 for (int j = 0; j < 2; j++) {
                     sum[j] = _mm_srai_epi16(sum[j], 3);
-
-                    __m128i all1 = _mm_set1_epi8(0xFF);
-                    __m128i one  = _mm_set1_epi16(0x01);
-
-                    __m128i mask = _mm_cmplt_epi16(sum[j], zero);
-                    __m128i temp = _mm_xor_si128(sum[j], all1); // ~sum0
-                    temp = _mm_add_epi16(temp, one);  // -x == ~x + 1
+                    __m128i mask = _mm_cmplt_epi16(sum[j], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[j], _mm_set1_epi8(0xFF)); // ~sum0
+                    temp = _mm_add_epi16(temp, _mm_set1_epi16(0x01));  // -x == ~x + 1
                     temp = _mm_and_si128(temp, mask); // negative -> positive
                     sum[j] = _mm_andnot_si128(mask, sum[j]);
                     sum[j] = _mm_or_si128(sum[0], temp); // abs(sum0)
@@ -201,16 +197,11 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 sum0 = _mm_or_si128(sum0, sum1);
                 sum0 = _mm_shuffle_epi32(sum0, _MM_SHUFFLE(3, 1, 2, 0));
 
-                __m128i zero = _mm_setzero_si128();
-                __m128i all1 = _mm_set1_epi8(0xFF);
-                __m128i one  = _mm_set1_epi16(0x01);
-
-                __m128i mask = _mm_cmplt_epi16(sum0, zero);
-                sum1 = _mm_xor_si128(sum0, all1); // ~sum0
-                sum1 = _mm_add_epi16(sum1, one);  // -x == ~x + 1
+                __m128i mask = _mm_cmplt_epi16(sum0, _mm_setzero_si128());
+                sum1 = _mm_xor_si128(sum0, _mm_set1_epi8(0xFF)); // ~sum0
+                sum1 = _mm_add_epi16(sum1, _mm_set1_epi16(0x01));  // -x == ~x + 1
                 sum1 = _mm_and_si128(sum1, mask); // negative -> positive
-                mask = _mm_xor_si128(mask, all1);
-                sum0 = _mm_and_si128(sum0, mask);
+                sum0 = _mm_andnot_si128(mask, sum0);
                 sum0 = _mm_or_si128(sum0, sum1); // abs(sum0)
 
                 sum  = _mm_adds_epu16(sum, sum0);

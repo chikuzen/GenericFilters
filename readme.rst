@@ -28,6 +28,13 @@ planes - Choose which planes to process. default will process all planes. Allowe
 
 threshold - Allows to limit the maximum change. default is 65535.
 
+coordinates - List which specifies the pixel to refer to. This list must have eight integers which consisted of 0 or 1. Default is [1, 1, 1, 1, 1, 1, 1, 1].::
+
+    [top-left, top, top-right, left, right, bottom-left, bottom, bottom-right]
+
+    [0, 0, 0, 1, 1, 0, 0, 0] - referring to only left and right pixels.
+    [0, 1, 0, 1, 1, 0, 1, 0] - The pixels which exist in the direction of slanting are ignored.
+
 Maximum:
 --------
 Replaces the pixel by the local(3x3) maximum.::
@@ -37,6 +44,8 @@ Replaces the pixel by the local(3x3) maximum.::
 planes - same as Minimum.
 
 threshold - same as Minimum.
+
+coordinates - same as Minimum.
 
 Median:
 -------

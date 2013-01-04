@@ -53,7 +53,7 @@ neighbors_get_frame(neighbors_t *nh, const VSFormat *fi, const VSFrameRef **fr,
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
                           vsapi->getReadPtr(src, plane),
-                          nh->th);
+                          nh->th, nh->enable);
     }
 
     _aligned_free(buff);
@@ -83,6 +83,16 @@ set_neighbors_data(generic_handler_t *gh, filter_id_t id, char *msg,
     nh->th = (int)vsapi->propGetInt(in, "threshold", 0, &err);
     if (err || nh->th < 0 || nh->th > 0xFFFF) {
         nh->th = 0xFFFF;
+    }
+
+    for (int i = 0; i < 8; nh->enable[i++] = 1);
+    int length = vsapi->propNumElements(in, "coordinates");
+    RET_IF_ERROR(length > 0 && length != 8, "invalid coordinates");
+    for (int i = 0; i < length; i++) {
+        nh->enable[i] = (int)vsapi->propGetInt(in, "coordinates", i, NULL);
+        if (nh->enable[i] != 0) {
+            nh->enable[i] = 1;
+        }
     }
 
     gh->get_frame_filter = neighbors_get_frame;

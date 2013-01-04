@@ -27,7 +27,7 @@
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-               uint8_t *dstp, const uint8_t *srcp, int th)
+               uint8_t *dstp, const uint8_t *srcp, int th, int *enable)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -52,8 +52,10 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i max = src;
             for (int i = 0; i < 8; i++) {
-                __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
-                max = _mm_max_epu8(target, max);
+                if (enable[i]) {
+                    __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
+                    max = _mm_max_epu8(target, max);
+                }
             }
             __m128i thrs = _mm_adds_epu8(src, _mm_set1_epi8(threshold));
             src = _mm_min_epu8(max, thrs);
@@ -70,7 +72,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-                uint8_t *d, const uint8_t *s, int th)
+                uint8_t *d, const uint8_t *s, int th, int *enable)
 {
     stride >>= 1;
     uint16_t *dstp = (uint16_t *)d;
@@ -95,20 +97,22 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 p1 + x - 1,         p1 + x + 1,
                 p2 + x - 1, p2 + x, p2 + x + 1
             };
-            
+
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i max = src;
             for (int i = 0; i < 8; i++) {
-                __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
-                max = _mm_subs_epu16(max, target);
-                max = _mm_adds_epu16(target, max);
+                if (enable[i]) {
+                    __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
+                    max = _mm_subs_epu16(max, target);
+                    max = _mm_adds_epu16(target, max);
+                }
             }
             __m128i thrs = _mm_adds_epu8(src, _mm_set1_epi16(threshold));
             src = _mm_subs_epu16(max, thrs);
             max = _mm_subs_epu16(max, src);
             _mm_store_si128((__m128i *)(dstp + x), max);
         }
-        
+
         srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
