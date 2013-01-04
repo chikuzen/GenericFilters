@@ -100,6 +100,9 @@ for opt; do
         --extra-ldflags=*)
             XLDFLAGS="$optarg"
             ;;
+        --install=*)
+            libdir="$optarg"
+            ;;
         *)
             error_exit "unknown option $opt"
             ;;
