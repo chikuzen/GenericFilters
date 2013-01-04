@@ -133,7 +133,7 @@ static setter_t get_setter(const char *filter_name)
         { "Convolution",   { set_convolution,    ID_CONVO    } },
         { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
         { "Sobel",         { set_edge,           ID_SOBEL    } },
-        { "prewitt",       { set_edge,           ID_PREWITT  } },
+        { "Prewitt",       { set_edge,           ID_PREWITT  } },
         { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
         { "Maximum",       { set_neighbors,      ID_MAXIMUM  } },
         { "Median",        { set_neighbors,      ID_MEDIAN   } },
@@ -204,7 +204,7 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
          GENERIC_FILTERS_VERSION, VAPOURSYNTH_API_VERSION, 1, plugin);
     reg("Convolution",
         "clip:clip;matrix:int[]:opt;bias:float:opt;divisor:float:opt;"
-        "planes:int[]:opt;mode:data:opt;",
+        "planes:int[]:opt;saturate:int:opt;mode:data:opt;",
         create_filter_common, (void *)"Convolution", plugin);
     reg("ConvolutionHV",
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"

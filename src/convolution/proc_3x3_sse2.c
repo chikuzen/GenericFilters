@@ -20,14 +20,14 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-
+#include <stdio.h>
 #include "convolution.h"
 #include "sse2.h"
 
 
 static void GF_FUNC_ALIGN VS_CC
-proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width, int height,
-               int stride, uint8_t *dstp, const uint8_t *srcp)
+with_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
+              int height, int stride, uint8_t *dstp, const uint8_t *srcp)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -103,8 +103,16 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width, int hei
 
 
 static void GF_FUNC_ALIGN VS_CC
-proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
-                int height, int stride, uint8_t *d, const uint8_t *s)
+without_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
+                 int height, int stride, uint8_t *dstp, const uint8_t *srcp)
+{
+
+}
+
+
+static void GF_FUNC_ALIGN VS_CC
+without_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
+                  int height, int stride, uint8_t *d, const uint8_t *s)
 {
     const uint16_t *srcp = (uint16_t *)s;
     uint16_t *dstp = (uint16_t *)d;
@@ -173,7 +181,14 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 }
 
 
+static void GF_FUNC_ALIGN VS_CC
+with_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
+               int height, int stride, uint8_t *d, const uint8_t *s)
+{
+}
 const proc_convolution convo_3x3[] = {
-    proc_8bit_sse2,
-    proc_16bit_sse2
+    without_sat_8bit,
+    with_sat_8bit,
+    without_sat_16bit,
+    with_sat_16bit
 };

@@ -20,7 +20,7 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <stdio.h>
+
 #include "edge.h"
 #include "sse2.h"
 
@@ -29,7 +29,7 @@
     v0 v1 v2        -1  0  1        -1 -2 -1
     v3 v4 v5        -2  0  2         0  0  0
     v6 v7 v8        -1  0  1         1  2  1
-    
+
     out = (abs(-v0 + v2 - 2*v3 + 2*v5 - v6 + v8) +
            abs(-v0 - 2*v1 - v2 + v6 + 2*v7 + v8)) / 8
 */
@@ -56,11 +56,11 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy8(p2, srcp, width, 1);
-        
+
         for (int x = 0; x < width; x += 16) {
             __m128i sum_lo = _mm_setzero_si128();
             __m128i sum_hi = _mm_setzero_si128();
-            
+
             uint8_t *array[2][6] = {
                 { p0 + x - 1, p0 + x + 1, p1 + x - 1, p1 + x + 1, p2 + x - 1, p2 + x + 1 },
                 { p0 + x - 1, p0 + x,     p0 + x + 1, p2 + x - 1, p2 + x,     p2 + x + 1 }
@@ -99,7 +99,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
                 sum0 = _mm_packs_epi32(sum0, sum1);
                 sum1 = _mm_packs_epi32(sum2, sum3);
-                
+
                 __m128i zero = _mm_setzero_si128();
                 __m128i all1 = _mm_set1_epi8(0xFF);
                 __m128i one  = _mm_set1_epi16(0x01);
@@ -125,12 +125,12 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             __m128i out  = _mm_packus_epi16(sum_lo, sum_hi);
 
             __m128i all1 = _mm_set1_epi8(0xFF);
-            
+
             __m128i th   = _mm_set1_epi8(th_min);
             __m128i temp = _mm_max_epu8(out, th);
             temp = _mm_cmpeq_epi8(temp, th);
             out = _mm_andnot_si128(temp, out);
-            
+
             th = _mm_set1_epi8(th_max);
             temp = _mm_min_epu8(out, th);
             temp = _mm_cmpeq_epi8(temp, th);
@@ -178,7 +178,7 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
-        
+
         for (int x = 0; x < width; x += 8) {
             __m128i sum = _mm_setzero_si128();
 
@@ -227,13 +227,13 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 sum  = _mm_adds_epu16(sum, sum0);
             }
             __m128i temp;
-            
+
             __m128i th   = _mm_set1_epi16(th_min);
             MM_MAX_EPU16(sum, th, temp); //temp = max(sum, th);
 
             temp = _mm_cmpeq_epi16(temp, th);
             sum  = _mm_andnot_si128(temp, sum);
-            
+
             th = _mm_set1_epi16(th_max);
             MM_MIN_EPU16(sum, th, temp); // temp = min(sum, th)
 

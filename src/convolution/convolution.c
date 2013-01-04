@@ -51,7 +51,7 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
         return;
     }
 
-    bps--;
+    bps = (bps - 1) * 2 + ch->saturate;
 
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
@@ -151,6 +151,11 @@ set_convolution_data(generic_handler_t *gh, filter_id_t id, char *msg,
         ch->rdiv = div;
     }
     ch->rdiv = 1.0 / ch->rdiv;
+
+    ch->saturate = (int)vsapi->propGetInt(in, "saturate", 0, &err);
+    if (err || ch->saturate != 0) {
+        ch->saturate = 1;
+    }
 
     gh->get_frame_filter = convolution_get_frame;
 }

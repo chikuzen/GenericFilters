@@ -37,6 +37,7 @@ struct filter_data {
     int m[25];
     double rdiv;
     double bias;
+    int saturate;
     const proc_convolution *function;
 };
 
