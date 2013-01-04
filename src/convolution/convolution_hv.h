@@ -39,6 +39,7 @@ struct filter_data {
     double rdiv_h;
     double rdiv_v;
     double bias;
+    int saturate;
     const proc_convo_hv *function;
 };
 

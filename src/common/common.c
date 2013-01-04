@@ -208,7 +208,8 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Convolution", plugin);
     reg("ConvolutionHV",
         "clip:clip;horizontal:int[]:opt;vertical:int[]:opt;bias:float:opt;"
-        "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;",
+        "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;"
+        "saturate:int:opt;",
         create_filter_common, (void *)"ConvolutionHV", plugin);
     reg("Sobel", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
         create_filter_common, (void *)"Sobel", plugin);

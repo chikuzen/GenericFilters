@@ -113,6 +113,11 @@ set_convolution_hv_data(generic_handler_t *gh, filter_id_t id, char *msg,
         ch->bias = 0.0;
     }
 
+    ch->saturate = (int)vsapi->propGetInt(in, "saturate", 0, &err);
+    if (err || ch->saturate != 0) {
+        ch->saturate = 1;
+    }
+
     ch->function = convo_hv5;
     gh->get_frame_filter = convolution_hv_get_frame;
 }

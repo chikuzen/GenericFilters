@@ -71,13 +71,13 @@ planes - same as Minimum.
 
 mode - If this is set as 'v' when the number of elements of the matrix is 3 or 5, processing will be performed vertically.
 
-saturate - If this is set as False, output values will turn into absolute values.
+saturate - If this is set as False, output values will turn into absolute values. Default is True.
 
 ConvolutionHV:
 --------------
 It performs vertical 5 convolution first and then performs horizontal 5 convolution (faster than 5x5 convolution).::
 
-    generic.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes])
+    generic.ConvolutionHV(clip clip[, int[] horizontal, int[] vertical, float bias, float divisor_h, float divisor_v, int[] planes, bint saturate])
 
 horizontal - horizontal matrix. the length must be five. default is [0, 0, 1, 0, 0].
 
@@ -85,11 +85,13 @@ vertical - vertical matrix. the length must be five. default is [0, 0, 1, 0, 0].
 
 bias - same as Convolution.
 
-divisor_h - horizontal diisor.
+divisor_h - horizontal divisor.
 
-divisor_v - vertical diisor.
+divisor_v - vertical divisor.
 
 planes - same as Minimum.
+
+saturate - same as Convolution.
 
 Sobel:
 ------
@@ -231,7 +233,7 @@ Note:
 -----
     If input clip has some frames which sample types are float, those will not be processed.
 
-    In the case format is 9/10bit, Convolution/ConvolutionHV does not clamp output values. Thus, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
+    The output values of Convolution(HV) are clamped to [0..255](8bit format) or [0..65535](9/10/16bit format). In the case format is 9/10bit, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
 
 How to compile:
 ---------------
