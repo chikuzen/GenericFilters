@@ -60,8 +60,8 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
             {
                 __m128i out[4] = {
-                    _mm_setzero_si128(), _mm_setzero_si128(),
-                    _mm_setzero_si128(), _mm_setzero_si128()
+                    _mm_set1_epi32(0x80000000), _mm_set1_epi32(0x80000000),
+                    _mm_set1_epi32(0x80000000), _mm_set1_epi32(0x80000000)
                 };
                 uint8_t *coordinates[] = {
                     p0 + x - 1, p0 + x, p0 + x + 1,

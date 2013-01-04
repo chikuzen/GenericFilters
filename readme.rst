@@ -80,6 +80,26 @@ divisor_v - vertical diisor.
 
 planes - same as Minimum.
 
+Sobel:
+------
+Detect edge with Sobel operator.::
+
+    generic.Sobel(clip clip[, int min, int max, int[] planes])
+
+min: if output pixel value is lower than this, it will be zero. default is 10 * 2^(bits_per_pixel - 8).
+
+max: if output pixel value is same or higher than this, it will be maximum value of the format. default is 10 * 2^(bits_per_pixel - 8).
+
+Prewitt:
+--------
+Detect edge with template matching using Prewitt operator.::
+
+    generic.Prewitt(clip clip[, int min, int max, int[] planes])
+
+min: same as Sobel.
+
+max: same as Sobel.
+
 Inflate:
 --------
 Local(3x3) average by taking into account only values higher than the pixel.::
