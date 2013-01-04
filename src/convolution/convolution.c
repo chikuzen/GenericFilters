@@ -51,7 +51,7 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
         return;
     }
 
-    bps = (bps - 1) * 2 + ch->saturate;
+    bps--;
 
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {

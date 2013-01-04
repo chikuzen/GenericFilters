@@ -85,8 +85,20 @@ proc_3_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             }
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
-            sum[2] = _mm_packs_epi32(sum[2], sum[3]);
-            sum[0] = _mm_packus_epi16(sum[0], sum[2]);
+            sum[1] = _mm_packs_epi32(sum[2], sum[3]);
+
+            if (!ch->saturate) {
+                for (int i = 0; i < 2; i++) {
+                    __m128i mask = _mm_cmplt_epi16(sum[i], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi16(temp, _mm_set1_epi16(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
+            }
+
+            sum[0] = _mm_packus_epi16(sum[0], sum[1]);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
@@ -149,6 +161,22 @@ proc_3_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
                 sum[i] = _mm_cvttps_epi32(sumfp);
+
+                __m128i temp = _mm_set1_epi32(0xFFFF);
+                __m128i mask = _mm_cmpgt_epi32(sum[i], temp);
+                temp = _mm_and_si128(mask, temp);
+                sum[i] = _mm_andnot_si128(mask, sum[i]);
+                sum[i] = _mm_or_si128(sum[i], temp);
+                mask = _mm_cmplt_epi32(sum[i], _mm_setzero_si128());
+                if (ch->saturate) {
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                } else {
+                    temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi32(temp, _mm_set1_epi32(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
             }
 
             sum[0] = _mm_shufflelo_epi16(sum[0], _MM_SHUFFLE(3, 1, 2, 0));
@@ -237,8 +265,20 @@ proc_5_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             }
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
-            sum[2] = _mm_packs_epi32(sum[2], sum[3]);
-            sum[0] = _mm_packus_epi16(sum[0], sum[2]);
+            sum[1] = _mm_packs_epi32(sum[2], sum[3]);
+
+            if (!ch->saturate) {
+                for (int i = 0; i < 2; i++) {
+                    __m128i mask = _mm_cmplt_epi16(sum[i], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi16(temp, _mm_set1_epi16(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
+            }
+
+            sum[0] = _mm_packus_epi16(sum[0], sum[1]);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
@@ -310,6 +350,23 @@ proc_5_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
                 sum[i] = _mm_cvttps_epi32(sumfp);
+
+                __m128i temp = _mm_set1_epi32(0xFFFF);
+                __m128i mask = _mm_cmpgt_epi32(sum[i], temp);
+                temp = _mm_and_si128(mask, temp);
+                sum[i] = _mm_andnot_si128(mask, sum[i]);
+                sum[i] = _mm_or_si128(sum[i], temp);
+
+                mask = _mm_cmplt_epi32(sum[i], _mm_setzero_si128());
+                if (ch->saturate) {
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                } else {
+                    temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi32(temp, _mm_set1_epi32(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
             }
 
             sum[0] = _mm_shufflelo_epi16(sum[0], _MM_SHUFFLE(3, 1, 2, 0));

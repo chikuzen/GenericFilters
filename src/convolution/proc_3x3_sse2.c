@@ -20,14 +20,13 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <stdio.h>
 #include "convolution.h"
 #include "sse2.h"
 
 
 static void GF_FUNC_ALIGN VS_CC
-with_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
-              int height, int stride, uint8_t *dstp, const uint8_t *srcp)
+proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
+               int height, int stride, uint8_t *dstp, const uint8_t *srcp)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -51,25 +50,19 @@ with_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
             for (int i = 0; i < 9; i++) {
                 __m128i x0, x1, y0, y1, s0, temp;
-
                 x0     = _mm_loadu_si128((__m128i *)array[i]);
-
                 temp   = _mm_setzero_si128();
                 y0     = _mm_unpackhi_epi8(x0, temp);
                 x0     = _mm_unpacklo_epi8(x0, temp);
-
                 temp   = _mm_set1_epi16(ch->m[i]);
                 x1     = _mm_mulhi_epi16(x0, temp);
                 x0     = _mm_mullo_epi16(x0, temp);
-
                 s0     = _mm_unpacklo_epi16(x0, x1);
                 sum[0] = _mm_add_epi32(sum[0], s0);
                 s0     = _mm_unpackhi_epi16(x0, x1);
                 sum[1] = _mm_add_epi32(sum[1], s0);
-
                 y1     = _mm_mulhi_epi16(y0, temp);
                 y0     = _mm_mullo_epi16(y0, temp);
-
                 s0     = _mm_unpacklo_epi16(y0, y1);
                 sum[2] = _mm_add_epi32(sum[2], s0);
                 s0     = _mm_unpackhi_epi16(y0, y1);
@@ -87,8 +80,20 @@ with_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
             }
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
-            sum[2] = _mm_packs_epi32(sum[2], sum[3]);
-            sum[0] = _mm_packus_epi16(sum[0], sum[2]);
+            sum[1] = _mm_packs_epi32(sum[2], sum[3]);
+
+            if (!ch->saturate) {
+                for (int i = 0; i < 2; i++) {
+                    __m128i mask = _mm_cmplt_epi16(sum[i], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi16(temp, _mm_set1_epi16(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
+            }
+
+            sum[0] = _mm_packus_epi16(sum[0], sum[1]);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
@@ -103,16 +108,8 @@ with_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
 
 static void GF_FUNC_ALIGN VS_CC
-without_sat_8bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
-                 int height, int stride, uint8_t *dstp, const uint8_t *srcp)
-{
-
-}
-
-
-static void GF_FUNC_ALIGN VS_CC
-without_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
-                  int height, int stride, uint8_t *d, const uint8_t *s)
+proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
+                int height, int stride, uint8_t *d, const uint8_t *s)
 {
     const uint16_t *srcp = (uint16_t *)s;
     uint16_t *dstp = (uint16_t *)d;
@@ -161,6 +158,23 @@ without_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
                 sum[i] = _mm_cvttps_epi32(sumfp);
+
+                __m128i temp = _mm_set1_epi32(0xFFFF);
+                __m128i mask = _mm_cmpgt_epi32(sum[i], temp);
+                temp = _mm_and_si128(mask, temp);
+                sum[i] = _mm_andnot_si128(mask, sum[i]);
+                sum[i] = _mm_or_si128(sum[i], temp);
+
+                mask = _mm_cmplt_epi32(sum[i], _mm_setzero_si128());
+                if (ch->saturate) {
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                } else {
+                    temp = _mm_xor_si128(sum[i], _mm_set1_epi8(0xFF));
+                    temp = _mm_add_epi32(temp, _mm_set1_epi32(0x01));
+                    temp = _mm_and_si128(temp, mask);
+                    sum[i] = _mm_andnot_si128(mask, sum[i]);
+                    sum[i] = _mm_or_si128(sum[i], temp);
+                }
             }
 
             sum[0] = _mm_shufflelo_epi16(sum[0], _MM_SHUFFLE(3, 1, 2, 0));
@@ -181,14 +195,7 @@ without_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
 }
 
 
-static void GF_FUNC_ALIGN VS_CC
-with_sat_16bit(convolution_t *ch, uint8_t *buff, int bstride, int width,
-               int height, int stride, uint8_t *d, const uint8_t *s)
-{
-}
 const proc_convolution convo_3x3[] = {
-    without_sat_8bit,
-    with_sat_8bit,
-    without_sat_16bit,
-    with_sat_16bit
+    proc_8bit_sse2,
+    proc_16bit_sse2
 };

@@ -14,7 +14,7 @@ Minimum:
 --------
 Replaces the pixel by the local(3x3) minimum.::
 
-    generic.Minimum(clip clip[, int[] planes, int threshold])
+    generic.Minimum(clip clip[, int[] planes, int threshold, bint[] coordinates])
 
 planes - Choose which planes to process. default will process all planes. Allowed values are 0, 1, and 2.::
 
@@ -39,7 +39,7 @@ Maximum:
 --------
 Replaces the pixel by the local(3x3) maximum.::
 
-    generic.Maximum(clip clip[, int[] planes, int threshold])
+    generic.Maximum(clip clip[, int[] planes, int threshold, bint[] coordinates])
 
 planes - same as Minimum.
 
@@ -59,7 +59,7 @@ Convolution:
 ------------
 Spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
 
-    generic.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode])
+    generic.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode, bint saturate])
 
 matrix - can be a matrix with 3, 5, 9 or 25 integer numbers. default is [0, 0, 0, 0, 1, 0, 0, 0, 0].
 
@@ -70,6 +70,8 @@ divisor - divides the output of the convolution (calculated before adding bias).
 planes - same as Minimum.
 
 mode - If this is set as 'v' when the number of elements of the matrix is 3 or 5, processing will be performed vertically.
+
+saturate - If this is set as False, output values will turn into absolute values.
 
 ConvolutionHV:
 --------------
@@ -229,7 +231,7 @@ Note:
 -----
     If input clip has some frames which sample types are float, those will not be processed.
 
-    In the case format is 9/10/16bit, Convolution/ConvolutionHV does not clamp output values. Thus, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
+    In the case format is 9/10bit, Convolution/ConvolutionHV does not clamp output values. Thus, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
 
 How to compile:
 ---------------
