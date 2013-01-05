@@ -96,20 +96,19 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                     }
 
                     for (int j = 0; j < 4; j++) {
+                        __m128i mask = _mm_cmplt_epi32(sum[j], _mm_setzero_si128());
+                        __m128i temp = _mm_xor_si128(sum[j], _mm_set1_epi8(0xFF)); // ~sum0
+                        temp = _mm_add_epi32(temp, _mm_set1_epi32(0x01));  // -x == ~x + 1
+                        temp = _mm_and_si128(temp, mask); // negative -> positive
+                        sum[j] = _mm_andnot_si128(mask, sum[j]);
+                        sum[j] = _mm_or_si128(sum[j], temp); // abs(sum0)
                         __m128i high = _mm_cmpgt_epi32(sum[j], out[j]);
                         sum[j] = _mm_and_si128(sum[j], high);
                         out[j] = _mm_andnot_si128(high, out[j]);
                         out[j] = _mm_or_si128(out[j], sum[j]);
                     }
                 }
-                {
-                    __m128 rdiv = _mm_set1_ps(0.10);
-                    for (int j = 0; j < 4; j++) {
-                        __m128 outfp = _mm_cvtepi32_ps(out[j]);
-                        outfp = _mm_mul_ps(outfp, rdiv);
-                        out[j] = _mm_cvttps_epi32(outfp);
-                    }
-                }
+
                 out[0] = _mm_packs_epi32(out[0], out[1]);
                 out[1] = _mm_packs_epi32(out[2], out[3]);
                 out[2] = _mm_packus_epi16(out[0], out[1]);
