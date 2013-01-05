@@ -32,9 +32,13 @@
 #define GF_ALIGN __declspec(align(16))
 #define GF_FUNC_ALIGN
 #else
-#define GF_ALIGN __attribute__((aligned(16)))
+#ifdef __MINGW32__
 #define GF_FUNC_ALIGN __attribute__((force_align_arg_pointer))
-#endif
+#else
+#define GF_FUNC_ALIGN
+#endif // __MINGW32__
+#define GF_ALIGN __attribute__((aligned(16)))
+#endif // _MSC_VER
 
 
 #define MM_MIN_EPU16(X, Y, Z) {\
