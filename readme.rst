@@ -99,13 +99,13 @@ Detect edge with Sobel operator.::
 
     generic.Sobel(clip clip[, int min, int max, int[] planes])
 
-min: if output pixel value is lower than this, it will be zero. default is 10 * 2^(bits_per_pixel - 8).
+min: if output pixel value is lower than this, it will be zero. default is 0.
 
-max: if output pixel value is same or higher than this, it will be maximum value of the format. default is 10 * 2^(bits_per_pixel - 8).
+max: if output pixel value is same or higher than this, it will be maximum value of the format. default is 65535.
 
 Prewitt:
 --------
-Detect edge with template matching using Prewitt operator.::
+Detect edge with template matching using Prewitt operator(aka. Prewitt compass edge detection).::
 
     generic.Prewitt(clip clip[, int min, int max, int[] planes])
 

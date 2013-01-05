@@ -73,16 +73,15 @@ set_edge_data(generic_handler_t *gh, filter_id_t id, char *msg, const VSMap *in,
     eh->function = id == ID_SOBEL ? sobel : prewitt;
 
     int err;
-    int shift = gh->vi->format->bitsPerSample - 8;
 
     eh->min = (int)vsapi->propGetInt(in, "min", 0, &err);
     if (err || eh->min < 0 || eh->min > 0xFFFF) {
-        eh->min = 10 << shift;
+        eh->min = 0;
     }
 
     eh->max = (int)vsapi->propGetInt(in, "max", 0, &err);
     if (err || eh->max < 0 || eh->max > 0xFFFF) {
-        eh->max = 10 << shift;
+        eh->max = 0xFFFF;
     }
 
     eh->plane_max = (uint16_t)((1 << gh->vi->format->bitsPerSample) - 1);

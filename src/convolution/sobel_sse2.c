@@ -31,7 +31,7 @@
     v6 v7 v8        -1  0  1         1  2  1
 
     out = (abs(-v0 + v2 - 2*v3 + 2*v5 - v6 + v8) +
-           abs(-v0 - 2*v1 - v2 + v6 + 2*v7 + v8)) / 8
+           abs(-v0 - 2*v1 - v2 + v6 + 2*v7 + v8))
 */
 
 
@@ -92,17 +92,16 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                     s0     = _mm_unpackhi_epi16(y0, y1);
                     sum[3] = _mm_add_epi32(sum[3], s0);
                 }
-                
                 sum[0] = _mm_packs_epi32(sum[0], sum[1]);
                 sum[1] = _mm_packs_epi32(sum[2], sum[3]);
+
                 for (int j = 0; j < 2; j++) {
-                    sum[j] = _mm_srai_epi16(sum[j], 3);
                     __m128i mask = _mm_cmplt_epi16(sum[j], _mm_setzero_si128());
                     __m128i temp = _mm_xor_si128(sum[j], _mm_set1_epi8(0xFF)); // ~sum0
                     temp = _mm_add_epi16(temp, _mm_set1_epi16(0x01));  // -x == ~x + 1
                     temp = _mm_and_si128(temp, mask); // negative -> positive
                     sum[j] = _mm_andnot_si128(mask, sum[j]);
-                    sum[j] = _mm_or_si128(sum[0], temp); // abs(sum0)
+                    sum[j] = _mm_or_si128(sum[j], temp); // abs(sum0)
                 }
                 sum_lo = _mm_adds_epu16(sum_lo, sum[0]);
                 sum_hi = _mm_adds_epu16(sum_hi, sum[1]);
