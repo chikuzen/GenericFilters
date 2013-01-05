@@ -37,6 +37,7 @@ struct filter_data {
     int min;
     int max;
     uint16_t plane_max;
+    int rshift;
     const proc_edge_detection *function;
 };
 

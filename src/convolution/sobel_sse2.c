@@ -106,6 +106,9 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 sum_lo = _mm_adds_epu16(sum_lo, sum[0]);
                 sum_hi = _mm_adds_epu16(sum_hi, sum[1]);
             }
+            
+            sum_lo = _mm_srli_epi16(sum_lo, eh->rshift);
+            sum_hi = _mm_srli_epi16(sum_hi, eh->rshift);
             __m128i out  = _mm_packus_epi16(sum_lo, sum_hi);
 
             __m128i all1 = _mm_set1_epi8(0xFF);
@@ -164,7 +167,9 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
         line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
-            __m128i sum = _mm_setzero_si128();
+            __m128i out[2] = {
+                _mm_setzero_si128(), _mm_setzero_si128()
+            };
 
             uint16_t *array[2][6] = {
                 { p0 + x - 1, p0 + x + 1, p1 + x - 1, p1 + x + 1, p2 + x - 1, p2 + x + 1 },
@@ -172,9 +177,9 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             };
 
             for (int i = 0; i < 2; i++) {
-                __m128i sum0 = _mm_setzero_si128();
-                __m128i sum1 = _mm_setzero_si128();
-
+                __m128i sum[2] = {
+                    _mm_setzero_si128(), _mm_setzero_si128()
+                };
                 for (int j = 0; j < 6; j++) {
                     __m128i x0, x1, s0, temp;
                     x0   = _mm_loadu_si128((__m128i *)array[i][j]);
@@ -182,48 +187,55 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                     x1   = _mm_mulhi_epi16(x0, temp);
                     x0   = _mm_mullo_epi16(x0, temp);
                     s0   = _mm_unpacklo_epi16(x0, x1);
-                    sum0 = _mm_add_epi32(sum0, s0);
+                    sum[0] = _mm_add_epi32(sum[0], s0);
                     s0   = _mm_unpackhi_epi16(x0, x1);
-                    sum1 = _mm_add_epi32(sum1, s0);
+                    sum[1] = _mm_add_epi32(sum[1], s0);
                 }
-                sum0 = _mm_srai_epi32(sum0, 3);
-                sum1 = _mm_srai_epi32(sum1, 3);
 
-                sum0 = _mm_shufflelo_epi16(sum0, _MM_SHUFFLE(3, 1, 2, 0));
-                sum0 = _mm_shufflehi_epi16(sum0, _MM_SHUFFLE(3, 1, 2, 0));
-                sum1 = _mm_shufflelo_epi16(sum1, _MM_SHUFFLE(2, 0, 3, 1));
-                sum1 = _mm_shufflehi_epi16(sum1, _MM_SHUFFLE(2, 0, 3, 1));
-                sum0 = _mm_or_si128(sum0, sum1);
-                sum0 = _mm_shuffle_epi32(sum0, _MM_SHUFFLE(3, 1, 2, 0));
-
-                __m128i mask = _mm_cmplt_epi16(sum0, _mm_setzero_si128());
-                sum1 = _mm_xor_si128(sum0, _mm_set1_epi8(0xFF)); // ~sum0
-                sum1 = _mm_add_epi16(sum1, _mm_set1_epi16(0x01));  // -x == ~x + 1
-                sum1 = _mm_and_si128(sum1, mask); // negative -> positive
-                sum0 = _mm_andnot_si128(mask, sum0);
-                sum0 = _mm_or_si128(sum0, sum1); // abs(sum0)
-
-                sum  = _mm_adds_epu16(sum, sum0);
+                for (int j = 0; j < 2; j++) {
+                    __m128i mask = _mm_cmplt_epi32(sum[j], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[j], _mm_set1_epi8(0xFF)); // ~sum
+                    temp   = _mm_add_epi32(temp, _mm_set1_epi32(0x01));  // -x == ~x + 1
+                    temp   = _mm_and_si128(temp, mask); // negative -> positive
+                    sum[j] = _mm_andnot_si128(mask, sum[j]);
+                    sum[j] = _mm_or_si128(sum[j], temp); // abs(sum0)
+                    out[j] = _mm_add_epi32(out[j], sum[j]);
+                }
             }
+
+            for (int i = 0; i < 2; i++) {
+                out[i] = _mm_srli_epi32(out[i], eh->rshift);
+                __m128i temp = _mm_set1_epi32(0xFFFF);
+                __m128i mask = _mm_cmpgt_epi32(out[i], temp);
+                temp = _mm_and_si128(mask, temp);
+                out[i] = _mm_andnot_si128(mask, out[i]);
+                out[i] = _mm_or_si128(out[i], temp);
+            }
+
+            out[0] = _mm_shufflelo_epi16(out[0], _MM_SHUFFLE(3, 1, 2, 0));
+            out[0] = _mm_shufflehi_epi16(out[0], _MM_SHUFFLE(3, 1, 2, 0));
+            out[1] = _mm_shufflelo_epi16(out[1], _MM_SHUFFLE(2, 0, 3, 1));
+            out[1] = _mm_shufflehi_epi16(out[1], _MM_SHUFFLE(2, 0, 3, 1));
+            out[0] = _mm_or_si128(out[0], out[1]);
+            out[0] = _mm_shuffle_epi32(out[0], _MM_SHUFFLE(3, 1, 2, 0));
+
             __m128i temp;
 
             __m128i th   = _mm_set1_epi16(th_min);
-            MM_MAX_EPU16(sum, th, temp); //temp = max(sum, th);
-
+            MM_MAX_EPU16(out[0], th, temp); //temp = max(out[0], th);
             temp = _mm_cmpeq_epi16(temp, th);
-            sum  = _mm_andnot_si128(temp, sum);
+            out[0]  = _mm_andnot_si128(temp, out[0]);
 
             th = _mm_set1_epi16(th_max);
-            MM_MIN_EPU16(sum, th, temp); // temp = min(sum, th)
-
+            MM_MIN_EPU16(out[0], th, temp); // temp = min(out[0], th)
             temp = _mm_cmpeq_epi16(temp, th);
             __m128i val = _mm_set1_epi16(plane_max);
             th = _mm_and_si128(temp, val);
             temp = _mm_xor_si128(temp, _mm_set1_epi8(0xFF));
-            sum = _mm_and_si128(sum, temp);
-            sum = _mm_or_si128(sum, th);
+            out[0] = _mm_and_si128(out[0], temp);
+            out[0] = _mm_or_si128(out[0], th);
 
-            _mm_store_si128((__m128i *)(dstp + x), sum);
+            _mm_store_si128((__m128i *)(dstp + x), out[0]);
         }
         srcp += stride * (y < height - 2);
         dstp += stride;

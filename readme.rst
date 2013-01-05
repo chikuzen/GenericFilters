@@ -97,21 +97,25 @@ Sobel:
 ------
 Detect edge with Sobel operator.::
 
-    generic.Sobel(clip clip[, int min, int max, int[] planes])
+    generic.Sobel(clip clip[, int min, int max, int[] planes, int rshift])
 
 min: if output pixel value is lower than this, it will be zero. default is 0.
 
 max: if output pixel value is same or higher than this, it will be maximum value of the format. default is 65535.
 
+rshift: shift the output values to right by this count before clamp. Default is 0.
+
 Prewitt:
 --------
 Detect edge with template matching using Prewitt operator(aka. Prewitt compass edge detection).::
 
-    generic.Prewitt(clip clip[, int min, int max, int[] planes])
+    generic.Prewitt(clip clip[, int min, int max, int[] planes, int rshift])
 
 min: same as Sobel.
 
 max: same as Sobel.
+
+rshift: same as Sobel.
 
 Inflate:
 --------

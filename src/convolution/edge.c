@@ -84,6 +84,11 @@ set_edge_data(generic_handler_t *gh, filter_id_t id, char *msg, const VSMap *in,
         eh->max = 0xFFFF;
     }
 
+    eh->rshift = (int)vsapi->propGetInt(in, "rshift", 0, &err);
+    if (err) {
+        eh->rshift = 0;
+    }
+
     eh->plane_max = (uint16_t)((1 << gh->vi->format->bitsPerSample) - 1);
 
     gh->get_frame_filter = edge_get_frame;

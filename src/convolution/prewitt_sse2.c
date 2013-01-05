@@ -102,6 +102,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                         temp = _mm_and_si128(temp, mask); // negative -> positive
                         sum[j] = _mm_andnot_si128(mask, sum[j]);
                         sum[j] = _mm_or_si128(sum[j], temp); // abs(sum0)
+
                         __m128i high = _mm_cmpgt_epi32(sum[j], out[j]);
                         sum[j] = _mm_and_si128(sum[j], high);
                         out[j] = _mm_andnot_si128(high, out[j]);
@@ -110,7 +111,9 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 }
 
                 out[0] = _mm_packs_epi32(out[0], out[1]);
+                out[0] = _mm_srli_epi16(out[0], eh->rshift);
                 out[1] = _mm_packs_epi32(out[2], out[3]);
+                out[1] = _mm_srli_epi16(out[1], eh->rshift);
                 out[2] = _mm_packus_epi16(out[0], out[1]);
                 output = out[2];
             }
@@ -119,6 +122,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             __m128i temp = _mm_max_epu8(output, th);
             temp = _mm_cmpeq_epi8(temp, th);
             output  = _mm_andnot_si128(temp, output);
+
             th   = _mm_set1_epi8(th_max);
             temp = _mm_min_epu8(output, th);
             temp = _mm_cmpeq_epi8(temp, th);
@@ -200,19 +204,29 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                     sum[1] = _mm_add_epi32(sum[1], s0);
                 }
                 for (int j = 0; j < 2; j++) {
+                    __m128i mask = _mm_cmplt_epi32(sum[j], _mm_setzero_si128());
+                    __m128i temp = _mm_xor_si128(sum[j], _mm_set1_epi8(0xFF)); // ~sum
+                    temp   = _mm_add_epi32(temp, _mm_set1_epi32(0x01));  // -x == ~x + 1
+                    temp   = _mm_and_si128(temp, mask); // negative -> positive
+                    sum[j] = _mm_andnot_si128(mask, sum[j]);
+                    sum[j] = _mm_or_si128(sum[j], temp); // abs(sum0)
+
                     __m128i high = _mm_cmpgt_epi32(sum[j], out[j]);
                     sum[j] = _mm_and_si128(sum[j], high);
                     out[j] = _mm_andnot_si128(high, out[j]);
                     out[j] = _mm_or_si128(out[j], sum[j]);
                 }
             }
-            __m128 rdiv = _mm_set1_ps(0.10);
 
-            for (int j = 0; j < 2; j++) {
-                __m128 outfp = _mm_cvtepi32_ps(out[j]);
-                outfp = _mm_mul_ps(outfp, rdiv);
-                out[j] = _mm_cvttps_epi32(outfp);
+            for (int i = 0; i < 2; i++) {
+                out[i] = _mm_srli_epi32(out[i], eh->rshift);
+                __m128i temp = _mm_set1_epi32(0xFFFF);
+                __m128i mask = _mm_cmpgt_epi32(out[i], temp);
+                temp = _mm_and_si128(mask, temp);
+                out[i] = _mm_andnot_si128(mask, out[i]);
+                out[i] = _mm_or_si128(out[i], temp);
             }
+
             out[0] = _mm_shufflelo_epi16(out[0], _MM_SHUFFLE(3, 1, 2, 0));
             out[0] = _mm_shufflehi_epi16(out[0], _MM_SHUFFLE(3, 1, 2, 0));
             out[1] = _mm_shufflelo_epi16(out[1], _MM_SHUFFLE(2, 0, 3, 1));
@@ -221,10 +235,12 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             out[0] = _mm_shuffle_epi32(out[0], _MM_SHUFFLE(3, 1, 2, 0));
 
             __m128i temp;
+
             __m128i th   = _mm_set1_epi16(th_min);
             MM_MAX_EPU16(out[0], th, temp);
             temp = _mm_cmpeq_epi16(temp, th);
             out[0]  = _mm_andnot_si128(temp, out[0]);
+
             th = _mm_set1_epi16(th_max);
             MM_MIN_EPU16(out[0], th, temp);
             temp = _mm_cmpeq_epi16(temp, th);

@@ -211,9 +211,11 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;"
         "saturate:int:opt;",
         create_filter_common, (void *)"ConvolutionHV", plugin);
-    reg("Sobel", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+    reg("Sobel",
+        "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;rshift:int:opt;",
         create_filter_common, (void *)"Sobel", plugin);
-    reg("Prewitt", "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;",
+    reg("Prewitt",
+        "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;rshift:int:opt;",
         create_filter_common, (void *)"Prewitt", plugin);
     reg("Minimum",
         "clip:clip;planes:int[]:opt;threshold:int:opt;coordinates:int[]:opt",
