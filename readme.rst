@@ -12,7 +12,7 @@ Currently, GenericFilters has thirteen functions as follows.
 
 Minimum:
 --------
-Replaces the pixel by the local(3x3) minimum.::
+Replaces the pixel by the local(3x3) minimum. (aka. Erosion)::
 
     generic.Minimum(clip clip[, int[] planes, int threshold, bint[] coordinates])
 
@@ -37,7 +37,7 @@ coordinates - List which specifies the pixel to refer to. This list must have ei
 
 Maximum:
 --------
-Replaces the pixel by the local(3x3) maximum.::
+Replaces the pixel by the local(3x3) maximum. (aka. Dilation)::
 
     generic.Maximum(clip clip[, int[] planes, int threshold, bint[] coordinates])
 
@@ -212,21 +212,11 @@ Examples:
                   0]
     >>> clip = generic.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
 
-    - Edge detection with Sobel operator:
-    >>> import math
-    >>> def get_lut(thresh):
-    ...     lut = []
-    ...     for y in range(256):
-    ...         for x in range(256):
-    ...             lut.append(binalyze(math.sqrt(x * x + y * y), thresh))
-    ...     return lut
-    ...
-    >>> clip = core.resize.Point(clip, format=vs.GRAY8)
-    >>> edge_h = generic.Convolution(clip, [1, 2, 1, 0, 0, 0, -1, -2, -1], divisor=8)
-    >>> edge_v = generic.Convolution(clip, [1, 0, -1, 2, 0, -2, 1, 0, -1], divisor=8)
-    >>> clip = std.Lut2([edge_h, edge_v], get_lut(16), 0)
-    >>> clip = generic.Binarize(clip, 10) # binarize edge mask
-    >>> clip = generic.Invert(clip) # invert edge mask
+    - Unsharp Masking
+    >>> blurred = generic.Convolution(clip, [1, 2, 1, 2, 3, 2, 1, 2, 1])
+    >>> half_max = (1 << clip.format.bits_per_sample) // 2
+    >>> expr = "x x y - %i + + %i -" % (half_max, half_max)
+    >>> clip = std.Expr([clip, blurred], expr)
 
     - Convert TV levels to PC levels:
     >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)
@@ -237,7 +227,9 @@ Note:
 -----
     If input clip has some frames which sample types are float, those will not be processed.
 
-    The output values of Convolution(HV) are clamped to [0..255](8bit format) or [0..65535](9/10/16bit format). In the case format is 9/10bit, they may exceed the maximum of the format. This is not a bug but a specification of this plugin.
+    The output values of Convolution(HV) are clamped to [0..255](8bit format) or [0..65535](9/10/16bit format).
+    In the case format is 9/10bit, they may exceed the maximum of the format.
+    This is not a bug but a specification of this plugin.
 
 How to compile:
 ---------------
