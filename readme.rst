@@ -93,6 +93,29 @@ planes - same as Minimum.
 
 saturate - same as Convolution.
 
+Blur:
+-----
+Blur image with 3x3 kernel.
+
+    generic.Blur(clip clip[, float ration_h, float ratio_v, int[] planes])
+
+ratio_h: The rate of the pixel of the left and right blended to a central pixel(0.0 to 1.0). Default is 0.5.
+
+ratio_v: The rate of the pixel of the top and bottom blended to a central pixel(0.0 to 1.0). Default is the value of ratio_h.::
+
+    examples
+
+    generic.Blur(clip, ratio_h=0.5, ratio_v=0.5)
+    horizontal kernel = [0.5, 1.0, 0.5], vertical kernel = [0.5, 1.0, 0.5]
+    This is same as generic.Convolution(clip, [1, 2, 1, 2, 4, 2, 1, 2, 1])
+
+    generic.Blur(clip, ratio_h=1.0, ratio_v=0)
+    horizontal kernel = [1.0, 1.0, 1.0], vertical kernel = [0.0, 1.0, 0.0]
+    This is same as generic.Convolution(clip, [0, 0, 0, 1, 1, 1, 0, 0, 0])
+    
+
+planes - same as Minimum.
+
 Sobel:
 ------
 Detect edge with Sobel operator.::
@@ -213,10 +236,10 @@ Examples:
     >>> clip = generic.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
 
     - Unsharp Masking
-    >>> blurred = generic.Convolution(clip, [1, 2, 1, 2, 3, 2, 1, 2, 1])
+    >>> blured = generic.Convolution(clip, [1, 2, 1, 2, 3, 2, 1, 2, 1])
     >>> half_max = (1 << clip.format.bits_per_sample) // 2
     >>> expr = "x x y - %i + + %i -" % (half_max, half_max)
-    >>> clip = std.Expr([clip, blurred], expr)
+    >>> clip = std.Expr([clip, blured], expr)
 
     - Convert TV levels to PC levels:
     >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)

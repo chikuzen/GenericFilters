@@ -33,7 +33,7 @@
 #define snprintf _snprintf
 #endif
 
-#define GENERIC_FILTERS_VERSION "0.2.2"
+#define GENERIC_FILTERS_VERSION "0.3.0"
 
 
 typedef struct generic_handler generic_handler_t;
@@ -53,6 +53,7 @@ typedef enum {
     ID_NONE,
     ID_CONVO,
     ID_CONVO_HV,
+    ID_BLUR,
     ID_SOBEL,
     ID_PREWITT,
     ID_MAXIMUM,
@@ -74,6 +75,7 @@ typedef void (VS_CC *set_filter_data_func)(generic_handler_t *gh,
 
 extern const set_filter_data_func set_convolution;
 extern const set_filter_data_func set_convolution_hv;
+extern const set_filter_data_func set_blur;
 extern const set_filter_data_func set_edge;
 extern const set_filter_data_func set_neighbors;
 extern const set_filter_data_func set_invert;

@@ -132,9 +132,9 @@ static setter_t get_setter(const char *filter_name)
     } table[] = {
         { "Convolution",   { set_convolution,    ID_CONVO    } },
         { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
+        { "Blur",          { set_blur,           ID_BLUR     } },
         { "Sobel",         { set_edge,           ID_SOBEL    } },
         { "Prewitt",       { set_edge,           ID_PREWITT  } },
-        { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV } },
         { "Maximum",       { set_neighbors,      ID_MAXIMUM  } },
         { "Median",        { set_neighbors,      ID_MEDIAN   } },
         { "Minimum",       { set_neighbors,      ID_MINIMUM  } },
@@ -211,6 +211,9 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         "divisor_h:float:opt;divisor_v:float:opt;planes:int[]:opt;"
         "saturate:int:opt;",
         create_filter_common, (void *)"ConvolutionHV", plugin);
+    reg("Blur",
+        "clip:clip;ratio_h:float:opt;ratio_v:float:opt;planes:int[]:opt;",
+        create_filter_common, (void *)"Blur", plugin);
     reg("Sobel",
         "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;rshift:int:opt;",
         create_filter_common, (void *)"Sobel", plugin);

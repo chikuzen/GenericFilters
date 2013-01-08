@@ -161,4 +161,66 @@ set_convolution_data(generic_handler_t *gh, filter_id_t id, char *msg,
 }
 
 
+static int VS_CC
+get_gcd(int x, int y)
+{
+    if (y == 0) {
+        return x;
+    }
+    return get_gcd(y, x % y);
+}
+
+
+static void VS_CC
+reduce_fraction(int *a, int *b)
+{
+    int gcd = get_gcd(*a, *b);
+    *a /= gcd;
+    *b /= gcd;
+}
+
+
+static void VS_CC
+set_blur_data(generic_handler_t *gh, filter_id_t id, char *msg,
+              const VSMap *in, VSMap *out, const VSAPI *vsapi)
+{
+    convolution_t *ch = (convolution_t *)calloc(sizeof(convolution_t), 1);
+    RET_IF_ERROR(!ch, "failed to allocate filter data");
+    gh->fdata = ch;
+    
+    int err;
+    int center_h = 1000, center_v = 1000;
+    int outer_h = (int)((vsapi->propGetFloat(in, "ratio_h", 0, &err) + 0.0005) * 1000);
+    if (err) {
+        outer_h = 500;
+    }
+    int outer_v = (int)((vsapi->propGetFloat(in, "ratio_v", 0, &err) + 0.0005) * 1000);
+    if (err) {
+        outer_v = outer_h;
+    }
+    RET_IF_ERROR(outer_h < 0 || outer_h > 1000, "ratio_h is out of range");
+    RET_IF_ERROR(outer_v < 0 || outer_v > 1000, "ratio_v is out of range");
+
+    reduce_fraction(&center_h, &outer_h);
+    reduce_fraction(&center_v, &outer_v);
+
+    int matrix[] = {
+        outer_h * outer_v,  center_h * outer_v,  outer_h * outer_v,
+        outer_h * center_v, center_h * center_v, outer_h * center_v,
+        outer_h * outer_v,  center_h * outer_v,  outer_h * outer_v
+    };
+    int div = 0;
+    for (int i = 0; i < 9; i++) {
+        ch->m[i] = matrix[i];
+        div += matrix[i];
+    }
+    ch->rdiv = 1.0 / div;
+
+    ch->function = convo_3x3;
+
+    gh->get_frame_filter = convolution_get_frame;
+}
+
+
 const set_filter_data_func set_convolution = set_convolution_data;
+const set_filter_data_func set_blur = set_blur_data;
