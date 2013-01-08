@@ -225,9 +225,10 @@ Examples:
     >>> generic = core.generic
     >>> clip = something
 
-    - blur(5x5) only Y(or R) plane:
-    >>> matrix = [10, 10, 16, 10, 10]
-    >>> blured = generic.ConvolutionHV(clip, matrix, matrix, planes=0)
+    - Sharpen(3x3) only Y(or R) plane:
+    >>> matrix = [-1, -2, -1, -2, 16, -2, -1, -2, -1]
+    >>> div = sum(matrix)
+    >>> blurred = generic.Convolution(clip, matrix, divisor=div, planes=0)
 
     - Displacement UV(or GB) planes by quarter sample up:
     >>> matrix = [1,
@@ -235,16 +236,25 @@ Examples:
                   0]
     >>> clip = generic.Convolution(clip, matrix, planes=[1, 2], mode = 'v')
 
-    - Unsharp Masking
-    >>> blured = generic.Convolution(clip, [1, 2, 1, 2, 3, 2, 1, 2, 1])
-    >>> half_max = (1 << clip.format.bits_per_sample) // 2
-    >>> expr = "x x y - %i + + %i -" % (half_max, half_max)
-    >>> clip = std.Expr([clip, blured], expr)
+    - Bob:
+    >>> height = clip.height
+    >>> clip = std.SeparateFields(clip, tff=True)
+    >>> top = generic.Convolution(clip[::2], [0, 3, 1], mode='v')
+    >>> bottom = generic.Convolution(clip[1::2], [1, 3, 0], mode='v')
+    >>> clip = core.resize.Bicubic(std.Interleave([top, bottom]), height=height)
 
-    - Convert TV levels to PC levels:
+    - Unsharp Masking:
+    >>> blurred = generic.Convolution(clip, [2,  4,  5,  4, 2,
+                                             4,  9, 12,  9, 4,
+                                             5, 12, 15, 12, 5,
+                                             4,  9, 12,  9, 4,
+                                             2,  4,  5,  4, 2]) # gaussian blur
+    >>> clip = std.Expr([clip, blurred], "x x + y -")
+
+    - Convert TV levels to PC levels(8bit YUV):
     >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)
     >>> uv = generic.Levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
-    >>> clip = std.ShufflePlanes([y, uv], [0, 1, 2], vs.YUV)
+    >>> clip = std.ShufflePlanes([y, uv], [0, 1], vs.YUV)
 
 Note:
 -----
