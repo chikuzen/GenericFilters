@@ -226,9 +226,8 @@ Examples:
     >>> clip = something
 
     - Sharpen(3x3) only Y(or R) plane:
-    >>> matrix = [-1, -2, -1, -2, 16, -2, -1, -2, -1]
-    >>> div = sum(matrix)
-    >>> blurred = generic.Convolution(clip, matrix, divisor=div, planes=0)
+    >>> matrix = [-1, -2, -1, -2, 18, -2, -1, -2, -1] # matrix[4] >= (sum of others) * -1 + 1
+    >>> sharp = generic.Convolution(clip, matrix, planes=0)
 
     - Displacement UV(or GB) planes by quarter sample up:
     >>> matrix = [1,
