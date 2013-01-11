@@ -95,7 +95,7 @@ saturate - same as Convolution.
 
 Blur:
 -----
-Blur image with 3x3 kernel.
+Blur image with 3x3 kernel.::
 
     generic.Blur(clip clip[, float ration_h, float ratio_v, int[] planes])
 
@@ -238,8 +238,8 @@ Examples:
     - Bob:
     >>> height = clip.height
     >>> clip = std.SeparateFields(clip, tff=True)
-    >>> top = generic.Convolution(clip[::2], [0, 3, 1], mode='v')
-    >>> bottom = generic.Convolution(clip[1::2], [1, 3, 0], mode='v')
+    >>> top = generic.Convolution(clip[::2], [0, 3, 1], planes=[1, 2], mode='v')
+    >>> bottom = generic.Convolution(clip[1::2], [1, 3, 0], planes=[1, 2], mode='v')
     >>> clip = core.resize.Bicubic(std.Interleave([top, bottom]), height=height)
 
     - Unsharp Masking:
