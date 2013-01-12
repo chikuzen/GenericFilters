@@ -1,6 +1,6 @@
-===================================
+====================================
 GenericFilters - VapourSynth plugin
-===================================
+====================================
 
 This plugin is a set of common image-processing filters.
 
@@ -8,7 +8,7 @@ This plugin modifies all pixel values with various algorithms.
 
 All functions support 8/9/10/16bit planar formats.
 
-Currently, GenericFilters has thirteen functions as follows.
+Currently, GenericFilters has fifteen functions as follows.
 
 Minimum:
 --------
@@ -204,7 +204,7 @@ The conversion function is::
 
 Binarize:
 ---------
-Binarize the pixel value.::
+Binarize the pixel values.::
 
     generic.Binarize(clip clip[, int threshold, inv v0, int v1, int[] planes])
 
@@ -215,6 +215,16 @@ v0 - If the value of pixel is lower than threshold, output will be this. Default
 v1 - If the value of pixel is same or higher than threshold, output will be this. Default is the maximum value of input(255, 511, 1023 or 65535).
 
 planes - same as Minimum.
+
+Binarize2:
+----------
+Binarize the pixel values with Sierra-2-4A error diffusion.::
+
+    generic.Binarize2(clip clip[, int[] planes])
+
+planes - same as Minimum.
+
+This function can process only 8bit format. If input frame is not 8bit, it will be ignored.
 
 Examples:
 ---------
