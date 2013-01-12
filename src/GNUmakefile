@@ -23,7 +23,7 @@ $(LIBNAME): $(OBJS)
 	-@ $(if $(STRIP), $(STRIP) $@)
 
 %.o: %.c .depend
-	@echo $(CC) -o $@ $(<:$(SRCDIR)/%.c=%.o)
+	@echo $(CC) -o $@ $(<:$(SRCDIR)/%=%)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
 install: all
