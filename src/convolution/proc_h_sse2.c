@@ -112,6 +112,13 @@ proc_3_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
     uint16_t *p0 = (uint16_t *)buff + 8;
 
+    uint16_t matrix[3];
+    int sign[3];
+    for (int i = 0; i < 3; i++) {
+        matrix[i] = ch->m[i] < 0 ? ch->m[i] * -1 : ch->m[i];
+        sign[i] = (ch->m[i] < 0);
+    }
+
     for (int y = 0; y < height; y++) {
         line_copy16(p0, srcp, width, 1);
 
@@ -121,18 +128,27 @@ proc_3_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             uint16_t *array[] = { p0 + x - 1, p0 + x, p0 + x + 1 };
 
             for (int i = 0; i < 3; i++) {
-                __m128i x0, x1, s0, temp;
+                __m128i x0, x1, s0, s1, temp;
 
-                x0     = _mm_loadu_si128((__m128i *)array[i]);
+                x0 = _mm_loadu_si128((__m128i *)array[i]);
 
-                temp   = _mm_set1_epi16(ch->m[i]);
-                x1     = _mm_mulhi_epi16(x0, temp);
-                x0     = _mm_mullo_epi16(x0, temp);
+                temp = _mm_set1_epi16(matrix[i]);
+                x1 = _mm_mulhi_epu16(x0, temp);
+                x0 = _mm_mullo_epi16(x0, temp);
 
-                s0     = _mm_unpacklo_epi16(x0, x1);
+                s0 = _mm_unpacklo_epi16(x0, x1);
+                s1 = _mm_unpackhi_epi16(x0, x1);
+
+                if (sign[i]) {
+                    temp = _mm_set1_epi8(0xFF);
+                    s0 = _mm_xor_si128(temp, s0);
+                    s1 = _mm_xor_si128(temp, s1);
+                    temp = _mm_set1_epi32(0x01);
+                    s0 = _mm_add_epi32(temp, s0);
+                    s1 = _mm_add_epi32(temp, s1);
+                }
                 sum[0] = _mm_add_epi32(sum[0], s0);
-                s0     = _mm_unpackhi_epi16(x0, x1);
-                sum[1] = _mm_add_epi32(sum[1], s0);
+                sum[1] = _mm_add_epi32(sum[1], s1);
             }
 
             __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
@@ -261,6 +277,13 @@ proc_5_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
     uint16_t *p0 = (uint16_t *)buff + 8;
 
+    uint16_t matrix[3];
+    int sign[3];
+    for (int i = 0; i < 3; i++) {
+        matrix[i] = ch->m[i] < 0 ? ch->m[i] * -1 : ch->m[i];
+        sign[i] = (ch->m[i] < 0);
+    }
+
     for (int y = 0; y < height; y++) {
         line_copy16(p0, srcp, width, 2);
 
@@ -272,18 +295,28 @@ proc_5_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             };
 
             for (int i = 0; i < 5; i++) {
-                __m128i x0, x1, s0, temp;
+                __m128i x0, x1, s0, s1, temp;
 
-                x0     = _mm_loadu_si128((__m128i *)array[i]);
+                x0 = _mm_loadu_si128((__m128i *)array[i]);
 
-                temp   = _mm_set1_epi16(ch->m[i]);
-                x1     = _mm_mulhi_epi16(x0, temp);
-                x0     = _mm_mullo_epi16(x0, temp);
+                temp = _mm_set1_epi16(matrix[i]);
+                x1 = _mm_mulhi_epu16(x0, temp);
+                x0 = _mm_mullo_epi16(x0, temp);
 
-                s0     = _mm_unpacklo_epi16(x0, x1);
+                s0 = _mm_unpacklo_epi16(x0, x1);
+                s1 = _mm_unpackhi_epi16(x0, x1);
+
+                if (sign[i]) {
+                    temp = _mm_set1_epi8(0xFF);
+                    s0 = _mm_xor_si128(temp, s0);
+                    s1 = _mm_xor_si128(temp, s1);
+                    temp = _mm_set1_epi32(0x01);
+                    s0 = _mm_add_epi32(temp, s0);
+                    s1 = _mm_add_epi32(temp, s1);
+                }
+
                 sum[0] = _mm_add_epi32(sum[0], s0);
-                s0     = _mm_unpackhi_epi16(x0, x1);
-                sum[1] = _mm_add_epi32(sum[1], s0);
+                sum[1] = _mm_add_epi32(sum[1], s1);
             }
 
             __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
@@ -294,7 +327,7 @@ proc_5_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
                 sum[i] = _mm_cvttps_epi32(sumfp);
-                
+
                 __m128i temp = _mm_set1_epi32(0xFFFF);
                 __m128i mask = _mm_cmpgt_epi32(sum[i], temp);
                 temp = _mm_and_si128(mask, temp);
