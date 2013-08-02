@@ -39,7 +39,8 @@ edge_get_frame(edge_t *eh, const VSFormat *fi, const VSFrameRef **fr,
         return;
     }
 
-    bps--;
+    int idx = bps == 1 ? 0 : fi->bitsPerSample == 16 ? 2 : 1;
+    eh->plane_max = (uint16_t)((1 << fi->bitsPerSample) - 1);
 
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
@@ -52,7 +53,7 @@ edge_get_frame(edge_t *eh, const VSFormat *fi, const VSFrameRef **fr,
             continue;
         }
 
-        eh->function[bps](buff, bstride, width, height,
+        eh->function[idx](buff, bstride, width, height,
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
                           vsapi->getReadPtr(src, plane),
@@ -88,8 +89,6 @@ set_edge_data(generic_handler_t *gh, filter_id_t id, char *msg, const VSMap *in,
     if (err) {
         eh->rshift = 0;
     }
-
-    eh->plane_max = (uint16_t)((1 << gh->vi->format->bitsPerSample) - 1);
 
     gh->get_frame_filter = edge_get_frame;
 }

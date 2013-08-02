@@ -65,7 +65,7 @@ typedef enum {
     ID_INFLATE,
     ID_DEFLATE,
     ID_BINARIZE,
-    ID_BINARIZE2
+    ID_BINARIZE2,
 } filter_id_t;
 
 
