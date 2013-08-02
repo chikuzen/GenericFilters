@@ -23,7 +23,7 @@
 
 #include "edge.h"
 #include "sse2.h"
-#include <smmintrin.h>
+
 /*
      pixels         horizontal      vertical
     v0 v1 v2        -1  0  1        -1 -2 -1
@@ -352,12 +352,11 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             abs_lo = _mm_srli_epi32(abs_lo, eh->rshift);
             abs_hi = _mm_srli_epi32(abs_hi, eh->rshift);
 
-            __m128i mask = _mm_srli_epi32(all1, 16);
-            __m128i temp = _mm_cmpgt_epi32(abs_lo, mask);
-            abs_lo = _mm_or_si128(_mm_cmpgt_epi32(abs_lo, mask), abs_lo);
-            abs_lo = _mm_and_si128(abs_lo, mask);
-            abs_hi = _mm_or_si128(_mm_cmpgt_epi32(abs_hi, mask), abs_hi);
-            abs_hi = _mm_and_si128(abs_hi, mask);
+            __m128i temp = _mm_srli_epi32(all1, 16);
+            abs_lo = _mm_or_si128(_mm_cmpgt_epi32(abs_lo, temp), abs_lo);
+            abs_lo = _mm_and_si128(abs_lo, temp);
+            abs_hi = _mm_or_si128(_mm_cmpgt_epi32(abs_hi, temp), abs_hi);
+            abs_hi = _mm_and_si128(abs_hi, temp);
 
             abs_lo = _mm_shufflelo_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
             abs_lo = _mm_shufflehi_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
@@ -366,7 +365,7 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             abs_lo = _mm_or_si128(abs_lo, abs_hi);
             abs_lo = _mm_shuffle_epi32(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
 
-            __m128i temp = MM_MIN_EPU16(abs_lo, xmax);
+            temp = MM_MIN_EPU16(abs_lo, xmax);
             temp = _mm_cmpeq_epi16(temp, xmax);
             abs_lo = _mm_or_si128(temp, abs_lo);
 
