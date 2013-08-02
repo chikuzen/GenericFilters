@@ -20,9 +20,15 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <stdio.h>
+
 #include "xxflate.h"
 #include "sse2.h"
+
+#define COORDINATES {\
+    p0 + x - 1, p0 + x, p0 + x + 1,\
+    p1 + x - 1,         p1 + x + 1,\
+    p2 + x - 1, p2 + x, p2 + x + 1\
+}
 
 
 static void GF_FUNC_ALIGN VS_CC
@@ -40,19 +46,17 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy8(p1, srcp, width, 1);
     srcp += stride;
 
+    __m128i zero = _mm_setzero_si128();
+    __m128i xth = _mm_set1_epi8((int8_t)threshold);
+
     for (int y = 0; y < height; y++) {
         line_copy8(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 16) {
-            __m128i sumlo = _mm_setzero_si128();
-            __m128i sumhi = _mm_setzero_si128();
+            __m128i sumlo = zero;
+            __m128i sumhi = zero;
 
-            uint8_t *coordinates[] = {
-                p0 + x - 1, p0 + x, p0 + x + 1,
-                p1 + x - 1, p1 + x + 1,
-                p2 + x - 1, p2 + x, p2 + x + 1
-            };
-            __m128i zero = _mm_setzero_si128();
+            uint8_t *coordinates[] = COORDINATES;
 
             for (int i = 0; i < 8; i++) {
                 __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
@@ -65,14 +69,66 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             sumlo = _mm_packus_epi16(sumlo, sumhi);
 
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
+            __m128i limit = _mm_subs_epu8(src, xth);
 
             sumlo = _mm_min_epu8(sumlo, src);
-
-            __m128i thrs = _mm_subs_epu8(src, _mm_set1_epi8(threshold));
-
-            sumlo = _mm_max_epu8(sumlo, thrs);
+            sumlo = _mm_max_epu8(sumlo, limit);
 
             _mm_store_si128((__m128i *)(dstp + x), sumlo);
+        }
+
+        srcp += stride * (y < height - 2);
+        dstp += stride;
+        p0 = p1;
+        p1 = p2;
+        p2 = (p2 == end) ? orig : p2 + bstride;
+    }
+}
+
+
+static void GF_FUNC_ALIGN VS_CC
+proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
+               uint8_t *d, const uint8_t *s, int th)
+{
+    const uint16_t *srcp = (uint16_t *)s;
+    uint16_t *dstp = (uint16_t *)d;
+    stride /= 2;
+    bstride /= 2;
+    uint16_t threshold = (uint16_t)th;
+
+    uint16_t *p0 = (uint16_t *)buff + 8;
+    uint16_t *p1 = p0 + bstride;
+    uint16_t *p2 = p1 + bstride;
+    uint16_t *orig = p0, *end = p2;
+
+    line_copy16(p0, srcp, width, 1);
+    line_copy16(p1, srcp, width, 1);
+    srcp += stride;
+
+    __m128i zero = _mm_setzero_si128();
+    __m128i xth  = _mm_set1_epi16((int16_t)threshold);
+
+    for (int y = 0; y < height; y++) {
+        line_copy16(p2, srcp, width, 1);
+
+        for (int x = 0; x < width; x += 8) {
+            __m128i sum = zero;
+
+            uint16_t *coordinates[] = COORDINATES;
+
+            for (int i = 0; i < 8; i++) {
+                __m128i xmm0 = _mm_loadu_si128((__m128i *)coordinates[i]);
+                sum = _mm_adds_epu16(sum, xmm0);
+            }
+            sum = _mm_srai_epi16(sum, 3);
+
+            __m128i src = _mm_load_si128((__m128i *)(p1 + x));
+            __m128i limit = _mm_subs_epu16(src, xth);
+
+            sum = MM_MIN_EPU16(sum, src);
+            sum = MM_MAX_EPU16(sum, limit);
+
+            _mm_store_si128((__m128i *)(dstp + x), sum);
         }
 
         srcp += stride * (y < height - 2);
@@ -90,9 +146,9 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 {
     const uint16_t *srcp = (uint16_t *)s;
     uint16_t *dstp = (uint16_t *)d;
-    stride >>= 1;
-    bstride >>= 1;
-    int16_t threshold = (int16_t)th;
+    stride /= 2;
+    bstride /= 2;
+    uint16_t threshold = (uint16_t)th;
 
     uint16_t *p0 = (uint16_t *)buff + 8;
     uint16_t *p1 = p0 + bstride;
@@ -103,25 +159,22 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy16(p1, srcp, width, 1);
     srcp += stride;
 
+    __m128i zero = _mm_setzero_si128();
+    __m128i xth  = _mm_set1_epi16((int16_t)threshold);
+
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
-            __m128i sumlo = _mm_setzero_si128();
-            __m128i sumhi = _mm_setzero_si128();
+            __m128i sumlo = zero;
+            __m128i sumhi = zero;
 
-            uint16_t *coordinates[] = {
-                p0 + x - 1, p0 + x, p0 + x + 1,
-                p1 + x - 1, p1 + x + 1,
-                p2 + x - 1, p2 + x, p2 + x + 1
-            };
-
-            __m128i temp = _mm_setzero_si128();
+            uint16_t *coordinates[] = COORDINATES;
 
             for (int i = 0; i < 8; i++) {
                 __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
-                sumlo = _mm_add_epi32(sumlo, _mm_unpacklo_epi16(target, temp));
-                sumhi = _mm_add_epi32(sumhi, _mm_unpackhi_epi16(target, temp));
+                sumlo = _mm_add_epi32(sumlo, _mm_unpacklo_epi16(target, zero));
+                sumhi = _mm_add_epi32(sumhi, _mm_unpackhi_epi16(target, zero));
             }
 
             sumlo = _mm_srai_epi32(sumlo, 3);
@@ -135,12 +188,10 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             sumlo = _mm_shuffle_epi32(sumlo, _MM_SHUFFLE(3, 1, 2, 0));
 
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
-            temp = _mm_subs_epu16(src, sumlo);
-            sumlo = _mm_subs_epu16(src, temp);
-
-            __m128i thrs = _mm_subs_epu16(src, _mm_set1_epi16(threshold));
-            temp = _mm_subs_epu16(sumlo, thrs);
-            sumlo = _mm_adds_epu16(sumlo, temp);
+            __m128i limit = _mm_subs_epu16(src, xth);
+            
+            sumlo = MM_MIN_EPU16(sumlo, src);
+            sumlo = MM_MAX_EPU16(sumlo, limit);
 
             _mm_store_si128((__m128i *)(dstp + x), sumlo);
         }
@@ -156,5 +207,6 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 const proc_xxflate deflate[] = {
     proc_8bit_sse2,
+    proc_9_10_sse2,
     proc_16bit_sse2
 };

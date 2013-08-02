@@ -40,16 +40,8 @@
 #define GF_ALIGN __attribute__((aligned(16)))
 #endif // _MSC_VER
 
-
-#define MM_MIN_EPU16(X, Y, Z) {\
-    Z = _mm_subs_epu16(X, Y);\
-    Z = _mm_subs_epu16(X, Z);\
-}
-
-#define MM_MAX_EPU16(X, Y, Z) {\
-    Z = _mm_subs_epu16(X, Y);\
-    Z = _mm_adds_epu16(Y, Z);\
-}
+#define MM_MAX_EPU16(X, Y) (_mm_adds_epu16(Y, _mm_subs_epu16(X, Y)))
+#define MM_MIN_EPU16(X, Y) (_mm_subs_epu16(X, _mm_subs_epu16(X, Y)))
 
 static inline void VS_CC
 line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)

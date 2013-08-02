@@ -39,7 +39,8 @@ xxflate_get_frame(xxflate_t *xh, const VSFormat *fi, const VSFrameRef **fr,
         return;
     }
 
-    bps--;
+    int idx = bps == 1 ? 0 : fi->bitsPerSample == 16 ? 2 : 1;
+
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
@@ -51,7 +52,7 @@ xxflate_get_frame(xxflate_t *xh, const VSFormat *fi, const VSFrameRef **fr,
             continue;
         }
 
-        xh->function[bps](buff, bstride, width, height,
+        xh->function[idx](buff, bstride, width, height,
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
                           vsapi->getReadPtr(src, plane),

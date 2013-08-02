@@ -227,10 +227,6 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 }
 
 
-#undef MM_MAX_EPU16
-#undef MM_MIN_EPU16
-#define MM_MAX_EPU16(X, Y) (_mm_adds_epu16(Y, _mm_subs_epu16(X, Y)))
-#define MM_MIN_EPU16(X, Y) (_mm_subs_epu16(X, _mm_subs_epu16(X, Y)))
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 uint8_t *d, const uint8_t *s, edge_t *eh)
