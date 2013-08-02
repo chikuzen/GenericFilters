@@ -40,7 +40,7 @@ convolution_hv_get_frame(convolution_hv_t *ch, const VSFormat *fi,
         return;
     }
 
-    bps--;
+    int idx = bps == 1 ? 0 : fi->bitsPerSample == 16 ? 2 : 1;
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
             continue;
@@ -52,7 +52,7 @@ convolution_hv_get_frame(convolution_hv_t *ch, const VSFormat *fi,
             continue;
         }
 
-        ch->function[bps](ch, buff, bstride, width, height,
+        ch->function[idx](ch, buff, bstride, width, height,
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
                           vsapi->getReadPtr(src, plane));
