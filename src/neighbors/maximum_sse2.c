@@ -24,6 +24,12 @@
 #include "neighbors.h"
 #include "sse2.h"
 
+#define COORDINATES {\
+    p0 + x - 1, p0 + x, p0 + x + 1,\
+    p1 + x - 1,         p1 + x + 1,\
+    p2 + x - 1, p2 + x, p2 + x + 1\
+}
+
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
@@ -39,27 +45,27 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy8(p1, srcp, width, 1);
     srcp += stride;
 
+    __m128i xth = _mm_set1_epi8((int8_t)threshold);
+
     for (int y = 0; y < height; y++) {
         line_copy8(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 16) {
-            uint8_t *coordinates[] = {
-                p0 + x - 1, p0 + x, p0 + x + 1,
-                p1 + x - 1,         p1 + x + 1,
-                p2 + x - 1, p2 + x, p2 + x + 1
-            };
+            uint8_t *coordinates[] = COORDINATES;
 
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i max = src;
+            
             for (int i = 0; i < 8; i++) {
                 if (enable[i]) {
                     __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
                     max = _mm_max_epu8(target, max);
                 }
             }
-            __m128i thrs = _mm_adds_epu8(src, _mm_set1_epi8(threshold));
-            src = _mm_min_epu8(max, thrs);
-            _mm_store_si128((__m128i *)(dstp + x), src);
+            
+            __m128i limit = _mm_adds_epu8(src, xth);
+            max = _mm_min_epu8(max, limit);
+            _mm_store_si128((__m128i *)(dstp + x), max);
         }
         srcp += stride * (y < height - 2);
         dstp += stride;
@@ -74,11 +80,11 @@ static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 uint8_t *d, const uint8_t *s, int th, int *enable)
 {
-    stride >>= 1;
+    stride /= 2;
+    bstride /= 2;
     uint16_t *dstp = (uint16_t *)d;
     const uint16_t *srcp = (uint16_t *)s;
 
-    bstride >>= 1;
     uint16_t *p0 = (uint16_t *)buff + 8;
     uint16_t *p1 = p0 + bstride;
     uint16_t *p2 = p1 + bstride;
@@ -87,29 +93,28 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy16(p0, srcp, width, 1);
     line_copy16(p1, srcp, width, 1);
+    srcp += stride;
+
+    __m128i xth = _mm_set1_epi16((int16_t)threshold);
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
-            uint16_t *coordinates[] = {
-                p0 + x - 1, p0 + x, p0 + x + 1,
-                p1 + x - 1,         p1 + x + 1,
-                p2 + x - 1, p2 + x, p2 + x + 1
-            };
+            uint16_t *coordinates[] = COORDINATES;
 
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i max = src;
+
             for (int i = 0; i < 8; i++) {
                 if (enable[i]) {
                     __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
-                    max = _mm_subs_epu16(max, target);
-                    max = _mm_adds_epu16(target, max);
+                    max = MM_MAX_EPU16(max, target);
                 }
             }
-            __m128i thrs = _mm_adds_epu8(src, _mm_set1_epi16(threshold));
-            src = _mm_subs_epu16(max, thrs);
-            max = _mm_subs_epu16(max, src);
+            
+            __m128i limit = _mm_adds_epu8(src, xth);
+            max = MM_MIN_EPU16(max, limit);
             _mm_store_si128((__m128i *)(dstp + x), max);
         }
 
