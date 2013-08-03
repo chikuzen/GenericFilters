@@ -35,6 +35,7 @@ typedef void (VS_CC *proc_convolution)(convolution_t *, uint8_t *, int, int,
 
 struct filter_data {
     int m[25];
+    int length;
     double rdiv;
     double bias;
     int saturate;
@@ -42,10 +43,8 @@ struct filter_data {
 };
 
 
-extern const proc_convolution convo_h3[];
-extern const proc_convolution convo_h5[];
-extern const proc_convolution convo_v3[];
-extern const proc_convolution convo_v5[];
+extern const proc_convolution convo_h[];
+extern const proc_convolution convo_v[];
 extern const proc_convolution convo_3x3[];
 extern const proc_convolution convo_5x5[];
 

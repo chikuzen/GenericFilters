@@ -57,11 +57,11 @@ planes - same as Minimum.
 
 Convolution:
 ------------
-Spatial convolution (horizontal/vertical 3, horizontal/vertical 5, 3x3 or 5x5) filter.::
+Spatial convolution (horizontal/vertical 3 to 17, 3x3 or 5x5) filter.::
 
     generic.Convolution(clip clip[, int[] matrix, float bias, float divisor, int[] planes, data mode, bint saturate])
 
-matrix - can be a matrix with 3, 5, 9 or 25 integer numbers. default is [0, 0, 0, 0, 1, 0, 0, 0, 0].
+matrix - can be a matrix with 3 to 17 or 25 integer numbers. the list length must be odd. default is [0, 0, 0, 0, 1, 0, 0, 0, 0](mode='s') or [0, 1, 0](mode='h' or 'v').
 
 bias - additive bias to adjust the total output intensity. default is 0.0.
 
@@ -69,9 +69,15 @@ divisor - divides the output of the convolution (calculated before adding bias).
 
 planes - same as Minimum.
 
-mode - If this is set as 'v' when the number of elements of the matrix is 3 or 5, processing will be performed vertically.
+mode - Form of matrix. Default is 's'.::
+
+    's' : square(3x3 or 5x5). matrix length matrix must be 9 or 25.
+    'h' : Horizontal form. matrix length must be odd number of 3 to 17.
+    'v' : Vertical form. matrix length must be odd number of 3 to 17.
 
 saturate - If this is set as False, output values will turn into absolute values. Default is True.
+
+Note that Convolution requires over 16x16 resolution. If input plane is too small, the process will be skipped.
 
 ConvolutionHV:
 --------------

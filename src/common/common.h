@@ -51,8 +51,8 @@ struct generic_handler {
 
 typedef enum {
     ID_NONE,
-    ID_CONVO,
-    ID_CONVO_HV,
+    ID_CONVOLUTION,
+    ID_CONVOLUTION_HV,
     ID_BLUR,
     ID_SOBEL,
     ID_PREWITT,

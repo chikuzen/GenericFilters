@@ -130,22 +130,22 @@ static setter_t get_setter(const char *filter_name)
         const char *name;
         setter_t setter;
     } table[] = {
-        { "Convolution",   { set_convolution,    ID_CONVO     } },
-        { "ConvolutionHV", { set_convolution_hv, ID_CONVO_HV  } },
-        { "Blur",          { set_blur,           ID_BLUR      } },
-        { "Sobel",         { set_edge,           ID_SOBEL     } },
-        { "Prewitt",       { set_edge,           ID_PREWITT   } },
-        { "Maximum",       { set_neighbors,      ID_MAXIMUM   } },
-        { "Median",        { set_neighbors,      ID_MEDIAN    } },
-        { "Minimum",       { set_neighbors,      ID_MINIMUM   } },
-        { "Invert",        { set_invert,         ID_INVERT    } },
-        { "Limiter",       { set_limiter,        ID_LIMITER   } },
-        { "Levels",        { set_levels,         ID_LEVELS    } },
-        { "Inflate",       { set_xxflate,        ID_INFLATE   } },
-        { "Deflate",       { set_xxflate,        ID_DEFLATE   } },
-        { "Binarize",      { set_binarize,       ID_BINARIZE  } },
-        { "Binarize2",     { set_binarize2,      ID_BINARIZE2 } },
-        { filter_name,     { NULL,               ID_NONE      } }
+        { "Convolution",   { set_convolution,    ID_CONVOLUTION    } },
+        { "ConvolutionHV", { set_convolution_hv, ID_CONVOLUTION_HV } },
+        { "Blur",          { set_blur,           ID_BLUR           } },
+        { "Sobel",         { set_edge,           ID_SOBEL          } },
+        { "Prewitt",       { set_edge,           ID_PREWITT        } },
+        { "Maximum",       { set_neighbors,      ID_MAXIMUM        } },
+        { "Median",        { set_neighbors,      ID_MEDIAN         } },
+        { "Minimum",       { set_neighbors,      ID_MINIMUM        } },
+        { "Invert",        { set_invert,         ID_INVERT         } },
+        { "Limiter",       { set_limiter,        ID_LIMITER        } },
+        { "Levels",        { set_levels,         ID_LEVELS         } },
+        { "Inflate",       { set_xxflate,        ID_INFLATE        } },
+        { "Deflate",       { set_xxflate,        ID_DEFLATE        } },
+        { "Binarize",      { set_binarize,       ID_BINARIZE       } },
+        { "Binarize2",     { set_binarize2,      ID_BINARIZE2      } },
+        { filter_name,     { NULL,               ID_NONE           } }
     };
 
     int i = 0;
@@ -162,7 +162,7 @@ static setter_t get_setter(const char *filter_name)
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
         close_handler(gh, core, vsapi); \
-        snprintf(msg, 240, __VA_ARGS__); \
+        snprintf(msg + strlen(msg), 240 - strlen(msg), __VA_ARGS__); \
         vsapi->setError(out, msg_buff); \
         return; \
     } \

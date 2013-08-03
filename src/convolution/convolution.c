@@ -39,16 +39,18 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
     int bstride = 0;
 
     int num = 1;
-    if (ch->function == convo_3x3 || ch->function == convo_v3) {
+    if (ch->function == convo_3x3) {
         num = 3;
     }
-    if (ch->function == convo_5x5 || ch->function == convo_v5) {
+    if (ch->function == convo_5x5) {
         num = 5;
     }
-    bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
-    buff = (uint8_t *)_aligned_malloc(bstride * num, 16);
-    if (!buff) {
-        return;
+    if (ch->function != convo_v) {
+        bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
+        buff = (uint8_t *)_aligned_malloc(bstride * num, 16);
+        if (!buff) {
+            return;
+        }
     }
 
     int idx = bps == 1 ? 0 : fi->bitsPerSample == 16 ? 2 : 1;
@@ -59,20 +61,8 @@ convolution_get_frame(convolution_t *ch, const VSFormat *fi,
         }
 
         int width = vsapi->getFrameWidth(src, plane);
-        if (width < 2 && ch->function != convo_v3 && ch->function != convo_v5) {
-            continue;
-        }
-        if (width < 4 &&
-            (ch->function == convo_h5 || ch->function == convo_5x5)) {
-            continue;
-        }
-
         int height = vsapi->getFrameHeight(src, plane);
-        if (height < 2 && ch->function != convo_h3 && ch->function != convo_h5) {
-            continue;
-        }
-        if (height < 4 &&
-            (ch->function == convo_v5 || ch->function == convo_5x5)) {
+        if (width < 16 || height < 16) {
             continue;
         }
 
@@ -89,39 +79,50 @@ static void VS_CC
 set_matrix_and_proc_function(convolution_t *ch, const VSMap *in,
                              const VSAPI *vsapi, char *msg)
 {
-    const char *param = "matrix";
-    int num = vsapi->propNumElements(in, param);
-    RET_IF_ERROR(num > 0 && num != 3 && num != 5 && num != 9 && num != 25,
-                 "invalid %s", param);
-
-    switch (num) {
-    case 3:
-        ch->function = convo_h3;
-        break;
-    case 5:
-        ch->function = convo_h5;
-        break;
-    case 25:
-        ch->function = convo_5x5;
-        break;
-    default:
-        ch->function = convo_3x3;
-    }
-
     int err;
     const char *mode = vsapi->propGetData(in, "mode", 0, &err);
-    if (!err && mode[0] == 'v' && (num == 3 || num == 5)) {
-        ch->function = num == 3 ? convo_v3 : convo_v5;
+    if (err) {
+        mode = "square";
+    }
+    RET_IF_ERROR(!(mode[0] == 's' || mode[0] == 'h' || mode[0] == 'v'),
+                 "invalid mode was specified");
+    
+    int num = vsapi->propNumElements(in, "matrix");
+    if (num < 0) {
+        num = 3;
+        if (mode[0] == 's') {
+            num = 9;
+        }
+    }
+    RET_IF_ERROR(num < 3 || num % 2 == 0, "invalid matrix length");
+    RET_IF_ERROR(mode[0] != 's' && num > 17, "invalid matrix length");
+    RET_IF_ERROR(mode[0] == 's' && num != 9 && num != 25,
+                 "invalid matrix length");
+
+    switch (mode[0]) {
+    case 's':
+        ch->function = num == 9 ? convo_3x3 : convo_5x5;
+        break;
+    case 'h':
+        ch->function = convo_h;
+        break;
+    case 'v':
+        ch->function = convo_v;
+        break;
+    default:
+        break;
     }
 
-    ch->m[4] = 1;
+    ch->m[num / 2] = 1;
     for (int i = 0; i < num; i++) {
-        int element = (int)vsapi->propGetInt(in, param, i, NULL);
+        int element = (int)vsapi->propGetInt(in, "matrix", i, NULL);
         RET_IF_ERROR(element < -1024 || element > 1023,
-                     "%s has out of range value", param);
+                     "matrix has out of range value");
         ch->m[i] = element;
         ch->rdiv += element;
     }
+
+    ch->length = num;
 
     if (ch->rdiv == 0.0) {
         ch->rdiv = 1.0;
@@ -138,7 +139,9 @@ set_convolution_data(generic_handler_t *gh, filter_id_t id, char *msg,
     gh->fdata = ch;
 
     set_matrix_and_proc_function(ch, in, vsapi, msg);
-    RET_IF_ERROR(msg[0], " ");
+    if (msg[0]) {
+        return;
+    }
 
     int err;
     ch->bias = vsapi->propGetFloat(in, "bias", 0, &err);
