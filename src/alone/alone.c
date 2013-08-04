@@ -50,9 +50,12 @@ proc_16bit(int plane_size, uint16_t *lut, const uint8_t *s, uint8_t *d)
 
 
 static void VS_CC
-alone_get_frame(alone_t *ah, const VSFormat *fi, const VSFrameRef **fr,
-                const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
+alone_get_frame(generic_handler_t *gh, const VSFormat *fi,
+                const VSFrameRef **fr, const VSAPI *vsapi,
+                const VSFrameRef *src, VSFrameRef *dst)
 {
+    alone_t *ah = gh->fdata;
+
     proc_alone function[] = {proc_8bit, proc_16bit};
     int index = fi->bytesPerSample - 1;
     for (int plane = 0; plane < fi->numPlanes; plane++) {

@@ -33,7 +33,7 @@
 #define snprintf _snprintf
 #endif
 
-#define GENERIC_FILTERS_VERSION "0.4.2"
+#define GENERIC_FILTERS_VERSION "0.5.0"
 
 
 typedef struct generic_handler generic_handler_t;
@@ -42,9 +42,11 @@ struct generic_handler {
     VSNodeRef *node;
     const VSVideoInfo *vi;
     int planes[3];
+    VSNodeRef *alt;
+    const VSFrameRef *altf;
     struct filter_data *fdata;
     void (VS_CC *free_data)(void *);
-    void (VS_CC *get_frame_filter)(struct filter_data *, const VSFormat *,
+    void (VS_CC *get_frame_filter)(generic_handler_t *, const VSFormat *,
                                    const VSFrameRef **, const VSAPI *,
                                    const VSFrameRef *, VSFrameRef *);
 };
@@ -66,6 +68,7 @@ typedef enum {
     ID_DEFLATE,
     ID_BINARIZE,
     ID_BINARIZE2,
+    ID_HYSTERESIS
 } filter_id_t;
 
 
@@ -85,6 +88,7 @@ extern const set_filter_data_func set_levels;
 extern const set_filter_data_func set_xxflate;
 extern const set_filter_data_func set_binarize;
 extern const set_filter_data_func set_binarize2;
+extern const set_filter_data_func set_hysteresis;
 
 
 #ifdef USE_ALIGNED_MALLOC

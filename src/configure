@@ -185,7 +185,7 @@ EOF
 cat config.mak >> config.log
 
 test "$SRCDIR" = "." || ln -sf $SRCDIR/GNUmakefile .
-mkdir -p common convolution neighbors alone
+mkdir -p common convolution neighbors alone specific
 
 echo configure finished
 exit 0

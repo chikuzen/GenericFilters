@@ -36,6 +36,9 @@ get_frame_common(int n, int activation_reason, void **instance_data,
 
     if (activation_reason == arInitial) {
         vsapi->requestFrameFilter(n, gh->node, frame_ctx);
+        if (gh->alt) {
+            vsapi->requestFrameFilter(n, gh->alt, frame_ctx);
+        }
         return NULL;
     }
 
@@ -44,8 +47,15 @@ get_frame_common(int n, int activation_reason, void **instance_data,
     }
 
     const VSFrameRef *src = vsapi->getFrameFilter(n, gh->node, frame_ctx);
+    if (gh->alt) {
+        gh->altf = vsapi->getFrameFilter(n, gh->alt, frame_ctx);
+    }
+
     const VSFormat *fi = vsapi->getFrameFormat(src);
     if (fi->sampleType != stInteger) {
+        if (gh->alt) {
+            vsapi->freeFrame(gh->altf);
+        }
         return src;
     }
     const int pl[] = {0, 1, 2};
@@ -56,9 +66,12 @@ get_frame_common(int n, int activation_reason, void **instance_data,
                                             vsapi->getFrameHeight(src, 0),
                                             fr, pl, src, core);
 
-    gh->get_frame_filter(gh->fdata, fi, fr, vsapi, src, dst);
+    gh->get_frame_filter(gh, fi, fr, vsapi, src, dst);
 
     vsapi->freeFrame(src);
+    if (gh->alt) {
+        vsapi->freeFrame(gh->altf);
+    }
 
     return dst;
 }
@@ -84,6 +97,10 @@ close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
     if (gh->node) {
         vsapi->freeNode(gh->node);
         gh->node = NULL;
+    }
+    if (gh->alt) {
+        vsapi->freeNode(gh->alt);
+        gh->alt = NULL;
     }
     if (gh->fdata) {
         if (gh->free_data) {
@@ -145,6 +162,7 @@ static setter_t get_setter(const char *filter_name)
         { "Deflate",       { set_xxflate,        ID_DEFLATE        } },
         { "Binarize",      { set_binarize,       ID_BINARIZE       } },
         { "Binarize2",     { set_binarize2,      ID_BINARIZE2      } },
+        { "Hysteresis",    { set_hysteresis,     ID_HYSTERESIS     } },
         { filter_name,     { NULL,               ID_NONE           } }
     };
 
@@ -247,4 +265,6 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Binarize", plugin);
     reg("Binarize2", "clip:clip;planes:int[]:opt",
         create_filter_common, (void *)"Binarize2", plugin);
+    reg("Hysteresis", "clip:clip;alt:clip;planes:int[]:opt",
+        create_filter_common, (void *)"Hysteresis", plugin);
 }

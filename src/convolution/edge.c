@@ -29,9 +29,11 @@
 
 
 static void VS_CC
-edge_get_frame(edge_t *eh, const VSFormat *fi, const VSFrameRef **fr,
+edge_get_frame(generic_handler_t *gh, const VSFormat *fi, const VSFrameRef **fr,
                const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
 {
+    edge_t *eh = gh->fdata;
+
     int bps = fi->bytesPerSample;
     int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
     uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 3, 16);

@@ -29,10 +29,12 @@
 
 
 static void VS_CC
-convolution_get_frame(convolution_t *ch, const VSFormat *fi,
+convolution_get_frame(generic_handler_t *gh, const VSFormat *fi,
                       const VSFrameRef **fr, const VSAPI *vsapi,
                       const VSFrameRef *src, VSFrameRef *dst)
 {
+    convolution_t *ch = gh->fdata;
+
     int bps = fi->bytesPerSample;
 
     uint8_t *buff = NULL;

@@ -25,7 +25,7 @@
 
 
 static void VS_CC
-invert_get_frame(struct filter_data *fd, const VSFormat *fi,
+invert_get_frame(generic_handler_t *gh, const VSFormat *fi,
                  const VSFrameRef **fr, const VSAPI *vsapi,
                  const VSFrameRef *src, VSFrameRef *dst)
 {

@@ -168,14 +168,17 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
 
-            if (!ch->saturate) {
-                __m128i mask = _mm_cmplt_epi16(sum[0], zero);
+            __m128i mask = _mm_cmpgt_epi16(sum[0], zero);
+            if (ch->saturate) {
+                sum[0] = _mm_and_si128(sum[0], mask);
+            } else {
                 __m128i temp = _mm_add_epi16(one, _mm_xor_si128(sum[0], all1));
-                temp = _mm_and_si128(temp, mask);
-                sum[0] = _mm_andnot_si128(mask, sum[0]);
+                temp = _mm_andnot_si128(mask, temp);
+                sum[0] = _mm_and_si128(sum[0], mask);
                 sum[0] = _mm_or_si128(sum[0], temp);
             }
 
+            
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
 
@@ -208,16 +211,16 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
     __m128i zero = _mm_setzero_si128();
     __m128i all1 = _mm_cmpeq_epi32(zero, zero);
-    __m128i one = _mm_srli_epi16(all1, 15);
+    __m128i one = _mm_srli_epi32(all1, 31);
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
     __m128 bias = _mm_set1_ps((float)ch->bias);
 
     __m128i matrix[9];
     int sign[9];
     for (int i = 0; i < 9; i++) {
-        sign[i] = ch->m[i] < 0 ? 1 : 0;
-        uint16_t val = sign[i] ? (uint16_t)(ch->m[i] * -1) : (uint16_t)ch->m[i];
-        matrix[i] = _mm_set1_epi16((int16_t)val);
+        sign[i] = ch->m[i] < 0 ? -1 : 1;
+        int16_t val = (int16_t)ch->m[i] * sign[i];
+        matrix[i] = _mm_set1_epi16(val);
     }
 
     for (int y = 0; y < height; y++) {
@@ -239,7 +242,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 xmm2 = _mm_unpacklo_epi16(xmm1, xmm0);
                 xmm0 = _mm_unpackhi_epi16(xmm1, xmm0);
 
-                if (sign[i]) {
+                if (sign[i] < 0) {
                     xmm2 = _mm_add_epi32(one, _mm_xor_si128(xmm2, all1));
                     xmm0 = _mm_add_epi32(one, _mm_xor_si128(xmm0, all1));
                 }
@@ -259,6 +262,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 mask = _mm_cmplt_epi32(sum[i], temp);
                 sum[i] = _mm_or_si128(_mm_and_si128(sum[i], mask),
                                       _mm_andnot_si128(mask, temp));
+
                 mask = _mm_cmpgt_epi32(sum[i], zero);
                 if (ch->saturate) {
                     sum[i] = _mm_and_si128(mask, sum[i]);

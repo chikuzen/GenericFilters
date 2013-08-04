@@ -62,9 +62,12 @@ sierra24a(uint16_t *buff_orig, int bstride, int width, int height, int stride,
 
 
 static void VS_CC
-binarize2_get_frame(binarize2_t *b2, const VSFormat *fi, const VSFrameRef **fr,
-                    const VSAPI *vsapi, const VSFrameRef *src, VSFrameRef *dst)
+binarize2_get_frame(generic_handler_t *gh, const VSFormat *fi,
+                    const VSFrameRef **fr, const VSAPI *vsapi,
+                    const VSFrameRef *src, VSFrameRef *dst)
 {
+    binarize2_t *b2 = gh->fdata;
+
     if (fi->bitsPerSample > 8) {
         for (int plane = 0; plane < fi->numPlanes; plane++) {
             if (fr[plane]) {

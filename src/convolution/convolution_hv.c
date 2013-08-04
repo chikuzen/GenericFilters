@@ -29,10 +29,11 @@
 
 
 static void VS_CC
-convolution_hv_get_frame(convolution_hv_t *ch, const VSFormat *fi,
+convolution_hv_get_frame(generic_handler_t *gh, const VSFormat *fi,
                          const VSFrameRef **fr, const VSAPI *vsapi,
                          const VSFrameRef *src, VSFrameRef *dst)
 {
+    convolution_hv_t *ch = gh->fdata;
     int bps = fi->bytesPerSample;
     int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
     uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 5, 16);

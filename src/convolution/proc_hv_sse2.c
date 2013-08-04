@@ -197,11 +197,13 @@ proc_9_10_sse2(convolution_hv_t *ch, uint8_t *buff, int bstride, int width,
 
                 sum[0] = _mm_packs_epi32(sum[0], sum[1]);
 
-                if (!ch->saturate) {
-                    __m128i mask = _mm_cmplt_epi16(sum[0], zero);
+                __m128i mask = _mm_cmpgt_epi16(sum[0], zero);
+                if (ch->saturate) {
+                    sum[0] = _mm_and_si128(sum[0], mask);
+                } else {
                     __m128i temp = _mm_add_epi16(one, _mm_xor_si128(sum[0], all1));
-                    temp = _mm_and_si128(temp, mask);
-                    sum[0] = _mm_andnot_si128(mask, sum[0]);
+                    temp = _mm_andnot_si128(mask, temp);
+                    sum[0] = _mm_and_si128(sum[0], mask);
                     sum[0] = _mm_or_si128(sum[0], temp);
                 }
 
