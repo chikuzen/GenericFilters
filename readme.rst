@@ -232,6 +232,18 @@ planes - same as Minimum.
 
 This function can process only 8bit format. If input frame is not 8bit, it will be ignored.
 
+Hysteresis:
+-----------
+Create a mask clip from two mask clips. Theorically, the base mask should be inside the alternate one. The principle of the filter is to enlarge the parts that belongs to both masks, inside the alternate mask.::
+
+    generic.Hysteresis(clip base, clip alt[, int[] planes])
+
+base - base mask clip. All resolution of frames of this must be smaller than 65535x65535.
+
+alt - alternate mask clip. this must be the same format/resolution as base.
+
+planes - same as Minimun.
+
 Examples:
 ---------
     >>> import vapoursynth as vs
@@ -270,6 +282,12 @@ Examples:
     >>> y = generic.Levels(clip, 16, 236, 1.0, 0, 255, 0)
     >>> uv = generic.Levels(clip, 16, 240, 1.0, 0, 255, [1, 2])
     >>> clip = std.ShufflePlanes([y, uv], [0, 1], vs.YUV)
+
+    - Hysteresis mask:
+    >>> mask = generic.Sobel(clip, planes=0)
+    >>> base = generic.Binarize(mask, 100, planes=0) # weak but noiseless
+    >>> alt = generic.Binarize(mask, 30, planes=0) # robust but noisy
+    >>> mask = generic.Hysteresis(base, alt, planes=0) # robust and noiseless edge mask
 
 Note:
 -----
