@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "specific/hysteresis.h"
 
 
 static const VSFrameRef * VS_CC
@@ -36,9 +37,6 @@ get_frame_common(int n, int activation_reason, void **instance_data,
 
     if (activation_reason == arInitial) {
         vsapi->requestFrameFilter(n, gh->node, frame_ctx);
-        if (gh->alt) {
-            vsapi->requestFrameFilter(n, gh->alt, frame_ctx);
-        }
         return NULL;
     }
 
@@ -47,15 +45,9 @@ get_frame_common(int n, int activation_reason, void **instance_data,
     }
 
     const VSFrameRef *src = vsapi->getFrameFilter(n, gh->node, frame_ctx);
-    if (gh->alt) {
-        gh->altf = vsapi->getFrameFilter(n, gh->alt, frame_ctx);
-    }
 
     const VSFormat *fi = vsapi->getFrameFormat(src);
     if (fi->sampleType != stInteger) {
-        if (gh->alt) {
-            vsapi->freeFrame(gh->altf);
-        }
         return src;
     }
     const int pl[] = {0, 1, 2};
@@ -69,9 +61,6 @@ get_frame_common(int n, int activation_reason, void **instance_data,
     gh->get_frame_filter(gh, fi, fr, vsapi, src, dst);
 
     vsapi->freeFrame(src);
-    if (gh->alt) {
-        vsapi->freeFrame(gh->altf);
-    }
 
     return dst;
 }
@@ -98,10 +87,6 @@ close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
         vsapi->freeNode(gh->node);
         gh->node = NULL;
     }
-    if (gh->alt) {
-        vsapi->freeNode(gh->alt);
-        gh->alt = NULL;
-    }
     if (gh->fdata) {
         if (gh->free_data) {
             gh->free_data(gh->fdata);
@@ -115,11 +100,11 @@ close_handler(void *instance_data, VSCore *core, const VSAPI *vsapi)
 
 
 static int VS_CC
-set_planes(generic_handler_t *gh, const VSMap *in, const VSAPI *vsapi)
+set_planes(int *planes, const VSMap *in, const VSAPI *vsapi)
 {
     int num = vsapi->propNumElements(in, "planes");
     if (num < 1) {
-        for (int i = 0; i < 3; gh->planes[i++] = 1);
+        for (int i = 0; i < 3; planes[i++] = 1);
         return 0;
     }
 
@@ -128,7 +113,7 @@ set_planes(generic_handler_t *gh, const VSMap *in, const VSAPI *vsapi)
         if (p < 0 || p > 2) {
             return -1;
         }
-        gh->planes[p] = 1;
+        planes[p] = 1;
     }
 
     return 0;
@@ -162,7 +147,6 @@ static setter_t get_setter(const char *filter_name)
         { "Deflate",       { set_xxflate,        ID_DEFLATE        } },
         { "Binarize",      { set_binarize,       ID_BINARIZE       } },
         { "Binarize2",     { set_binarize2,      ID_BINARIZE2      } },
-        { "Hysteresis",    { set_hysteresis,     ID_HYSTERESIS     } },
         { filter_name,     { NULL,               ID_NONE           } }
     };
 
@@ -177,6 +161,10 @@ static setter_t get_setter(const char *filter_name)
 #undef RET_IF_ERROR
 #endif
 
+static void VS_CC
+create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
+                     const VSAPI *vsapi)
+{
 #define RET_IF_ERROR(cond, ...) { \
     if (cond) { \
         close_handler(gh, core, vsapi); \
@@ -186,10 +174,6 @@ static setter_t get_setter(const char *filter_name)
     } \
 }
 
-static void VS_CC
-create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
-                     const VSAPI *vsapi)
-{
     const char *filter_name = (char *)user_data;
     char msg_buff[256] = { 0 };
     snprintf(msg_buff, 256, "%s: ", filter_name);
@@ -201,7 +185,8 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 
     gh->node = vsapi->propGetNode(in, "clip", 0, 0);
     gh->vi = vsapi->getVideoInfo(gh->node);
-    RET_IF_ERROR(set_planes(gh, in, vsapi), "planes index out of range");
+    RET_IF_ERROR(set_planes(gh->planes, in, vsapi),
+                 "planes index out of range");
 
     setter_t setter = get_setter(filter_name);
     RET_IF_ERROR(setter.id == ID_NONE, "initialize failed");
@@ -210,8 +195,33 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 
     vsapi->createFilter(in, out, filter_name, vs_init, get_frame_common,
                         close_handler, fmParallel, 0, gh, core);
-}
 #undef RET_IF_ERROR
+}
+
+
+void VS_CC
+create_hysteresis(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
+                 const VSAPI *vsapi)
+{
+    hysteresis_t *hh = (hysteresis_t *)calloc(sizeof(hysteresis_t), 1);
+    if (!hh) {
+        vsapi->setError(out, "Hysteresis: failed to allocate handler");
+        return;
+    }
+
+    hh->base = vsapi->propGetNode(in, "base", 0, 0);
+    hh->vi = vsapi->getVideoInfo(hh->base);
+    hh->alt = vsapi->propGetNode(in, "alt", 0, 0);
+    if (set_planes(hh->planes, in, vsapi)) {
+        filter_free_hysteresis(hh, core, vsapi);
+        vsapi->setError(out, "Hysteresis: planes index out of range");
+        return;
+    }
+
+    vsapi->createFilter(in, out, "Hysteresis", filter_init_hysteresis,
+                        get_frame_hysteresis, filter_free_hysteresis,
+                        fmParallel, 0, hh, core);
+}
 
 
 VS_EXTERNAL_API(void)
@@ -265,6 +275,6 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Binarize", plugin);
     reg("Binarize2", "clip:clip;planes:int[]:opt",
         create_filter_common, (void *)"Binarize2", plugin);
-    reg("Hysteresis", "clip:clip;alt:clip;planes:int[]:opt",
-        create_filter_common, (void *)"Hysteresis", plugin);
+    reg("Hysteresis", "base:clip;alt:clip;planes:int[]:opt",
+        create_hysteresis, NULL, plugin);
 }
