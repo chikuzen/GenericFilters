@@ -229,12 +229,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 }
             }
 
-            sum[0] = _mm_shufflelo_epi16(sum[0], _MM_SHUFFLE(3, 1, 2, 0));
-            sum[0] = _mm_shufflehi_epi16(sum[0], _MM_SHUFFLE(3, 1, 2, 0));
-            sum[1] = _mm_shufflelo_epi16(sum[1], _MM_SHUFFLE(2, 0, 3, 1));
-            sum[1] = _mm_shufflehi_epi16(sum[1], _MM_SHUFFLE(2, 0, 3, 1));
-            sum[0] = _mm_or_si128(sum[0], sum[1]);
-            sum[0] = _mm_shuffle_epi32(sum[0], _MM_SHUFFLE(3, 1, 2, 0));
+            sum[0] = mm_cast_epi32(sum[0], sum[1]);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }

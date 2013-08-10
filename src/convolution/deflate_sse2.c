@@ -180,12 +180,7 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             sumlo = _mm_srai_epi32(sumlo, 3);
             sumhi = _mm_srai_epi32(sumhi, 3);
 
-            sumlo = _mm_shufflelo_epi16(sumlo, _MM_SHUFFLE(3, 1, 2, 0));
-            sumlo = _mm_shufflehi_epi16(sumlo, _MM_SHUFFLE(3, 1, 2, 0));
-            sumhi = _mm_shufflelo_epi16(sumhi, _MM_SHUFFLE(2, 0, 3, 1));
-            sumhi = _mm_shufflehi_epi16(sumhi, _MM_SHUFFLE(2, 0, 3, 1));
-            sumlo = _mm_or_si128(sumlo, sumhi);
-            sumlo = _mm_shuffle_epi32(sumlo, _MM_SHUFFLE(3, 1, 2, 0));
+            sumlo = mm_cast_epi32(sumlo, sumhi);
 
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i limit = _mm_subs_epu16(src, xth);

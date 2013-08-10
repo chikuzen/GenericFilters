@@ -43,6 +43,34 @@
 #define MM_MAX_EPU16(X, Y) (_mm_adds_epu16(Y, _mm_subs_epu16(X, Y)))
 #define MM_MIN_EPU16(X, Y) (_mm_subs_epu16(X, _mm_subs_epu16(X, Y)))
 
+
+static inline __m128i mm_cast_epi32(__m128i xmm0, __m128i xmm1)
+{
+    xmm0 = _mm_shufflelo_epi16(xmm0, _MM_SHUFFLE(3, 1, 2, 0));
+    xmm0 = _mm_shufflehi_epi16(xmm0, _MM_SHUFFLE(3, 1, 2, 0));
+    xmm1 = _mm_shufflelo_epi16(xmm1, _MM_SHUFFLE(2, 0, 3, 1));
+    xmm1 = _mm_shufflehi_epi16(xmm1, _MM_SHUFFLE(2, 0, 3, 1));
+    xmm0 = _mm_or_si128(xmm0, xmm1);
+    return _mm_shuffle_epi32(xmm0, _MM_SHUFFLE(3, 1, 2, 0));
+}
+
+
+static inline __m128i mm_max_epi32(__m128i xmm0, __m128i xmm1)
+{
+    __m128i mask = _mm_cmpgt_epi32(xmm0, xmm1);
+    return _mm_or_si128(_mm_and_si128(mask, xmm0),
+                         _mm_andnot_si128(mask, xmm1));
+}
+
+
+static inline __m128i mm_min_epi32(__m128i xmm0, __m128i xmm1)
+{
+    __m128i mask = _mm_cmplt_epi32(xmm0, xmm1);
+    return _mm_or_si128(_mm_and_si128(mask, xmm0),
+                        _mm_andnot_si128(mask, xmm1));
+}
+
+
 static inline void VS_CC
 line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)
 {

@@ -30,9 +30,14 @@
     v3 v4 v5        -2  0  2         0  0  0
     v6 v7 v8        -1  0  1         1  2  1
 
-    out = (abs(-v0 + v2 - 2*v3 + 2*v5 - v6 + v8) +
-           abs(-v0 - 2*v1 - v2 + v6 + 2*v7 + v8))
-*/
+    H = -v0 + v2 - 2*v3 + 2*v5 - v6 + v8
+    V = -v0 - 2*v1 - v2 + v6 + 2*v7 + v8
+    out = sqrt(pow(H, 2) + pow(V, 2))
+        = max(H, V) * 15/16 + min(H, V) * 15/32
+    largest error: 6.25% mean error: 1.88%
+*/  
+
+static const GF_ALIGN int16_t fifteens[8] = {15, 15, 15, 15, 15, 15, 15, 15};
 
 
 static void GF_FUNC_ALIGN VS_CC
@@ -66,77 +71,90 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
         for (int x = 0; x < width; x += 16) {
             __m128i zero = _mm_setzero_si128();
-            __m128i abs_lo = zero;
-            __m128i abs_hi = zero;
+            __m128i sumlo[2] = {zero, zero};
+            __m128i sumhi[2] = {zero, zero};
 
             for (int i = 0; i < 2; i++) {
-                __m128i sum_lo, sum_hi, xmm0, xmm1, all1, one;
+                __m128i xmm0, xmm1, all1, one;
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
                 xmm1 = _mm_unpackhi_epi8(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi8(xmm0, zero);
-                sum_lo = xmm0;
-                sum_hi = xmm1;
+                sumlo[i] = xmm0;
+                sumhi[i] = xmm1;
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][1] + x));
                 xmm1 = _mm_unpackhi_epi8(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi8(xmm0, zero);
-                sum_lo = _mm_add_epi16(sum_lo, xmm0);
-                sum_hi = _mm_add_epi16(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi16(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi16(sumhi[i], xmm1);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][2] + x));
                 xmm1 = _mm_slli_epi16(_mm_unpackhi_epi8(xmm0, zero), 1);
                 xmm0 = _mm_slli_epi16(_mm_unpacklo_epi8(xmm0, zero), 1);
-                sum_lo = _mm_add_epi16(sum_lo, xmm0);
-                sum_hi = _mm_add_epi16(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi16(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi16(sumhi[i], xmm1);
 
+                // -x - y - 2z = (x + y + 2z) * -1
                 all1 = _mm_cmpeq_epi32(xmm0, xmm0);
                 one = _mm_srli_epi16(xmm0, 15);
-                sum_lo = _mm_add_epi16(one, _mm_xor_si128(sum_lo, all1));
-                sum_hi = _mm_add_epi16(one, _mm_xor_si128(sum_hi, all1));
+                sumlo[i] = _mm_add_epi16(one, _mm_xor_si128(sumlo[i], all1));
+                sumhi[i] = _mm_add_epi16(one, _mm_xor_si128(sumhi[i], all1));
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][3] + x));
                 xmm1 = _mm_unpackhi_epi8(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi8(xmm0, zero);
-                sum_lo = _mm_add_epi16(sum_lo, xmm0);
-                sum_hi = _mm_add_epi16(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi16(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi16(sumhi[i], xmm1);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][4] + x));
                 xmm1 = _mm_unpackhi_epi8(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi8(xmm0, zero);
-                sum_lo = _mm_add_epi16(sum_lo, xmm0);
-                sum_hi = _mm_add_epi16(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi16(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi16(sumhi[i], xmm1);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][5] + x));
                 xmm1 = _mm_slli_epi16(_mm_unpackhi_epi8(xmm0, zero), 1);
                 xmm0 = _mm_slli_epi16(_mm_unpacklo_epi8(xmm0, zero), 1);
-                sum_lo = _mm_add_epi16(sum_lo, xmm0);
-                sum_hi = _mm_add_epi16(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi16(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi16(sumhi[i], xmm1);
 
-                xmm0 = _mm_add_epi16(one, _mm_xor_si128(sum_lo, all1));
-                xmm1 = _mm_or_si128(_mm_max_epi16(sum_lo, zero),
-                                    _mm_max_epi16(xmm0, zero));
-                abs_lo = _mm_add_epi16(abs_lo, sum_lo);
+                xmm0 = _mm_add_epi16(one, _mm_xor_si128(sumlo[i], all1));
+                sumlo[i] = _mm_or_si128(_mm_max_epi16(sumlo[i], zero),
+                                        _mm_max_epi16(xmm0, zero));
 
-                xmm0 = _mm_add_epi16(one, _mm_xor_si128(sum_hi, all1));
-                xmm1 = _mm_or_si128(_mm_max_epi16(sum_hi, zero),
-                                    _mm_max_epi16(xmm0, zero));
-                abs_hi = _mm_add_epi16(abs_hi, xmm1);
+                xmm0 = _mm_add_epi16(one, _mm_xor_si128(sumhi[i], all1));
+                sumhi[i] = _mm_or_si128(_mm_max_epi16(sumhi[i], zero),
+                                        _mm_max_epi16(xmm0, zero));
             }
 
-            abs_lo = _mm_srli_epi16(abs_lo, eh->rshift);
-            abs_hi = _mm_srli_epi16(abs_hi, eh->rshift);
+            __m128i xmul = _mm_load_si128((__m128i *)fifteens);
 
-            __m128i out  = _mm_packus_epi16(abs_lo, abs_hi);
+            __m128i max = _mm_max_epi16(sumlo[0], sumlo[1]);
+            __m128i min = _mm_min_epi16(sumlo[0], sumlo[1]);
+            max = _mm_srli_epi16(_mm_mullo_epi16(max, xmul), 4);
+            min = _mm_srli_epi16(_mm_mullo_epi16(min, xmul), 5);
+            __m128i outlo = _mm_add_epi16(max, min);
 
-            __m128i xmax = _mm_load_si128((__m128i *)ar_max);
-            __m128i temp = _mm_min_epu8(out, xmax);
-            temp = _mm_cmpeq_epi8(temp, xmax);
+            max = _mm_max_epi16(sumhi[0], sumhi[1]);
+            min = _mm_min_epi16(sumhi[0], sumhi[1]);
+            max = _mm_srli_epi16(_mm_mullo_epi16(max, xmul), 4);
+            min = _mm_srli_epi16(_mm_mullo_epi16(min, xmul), 5);
+            __m128i outhi = _mm_add_epi16(max, min);
+            
+            outlo = _mm_srli_epi16(outlo, eh->rshift);
+            outhi = _mm_srli_epi16(outhi, eh->rshift);
+
+            __m128i out  = _mm_packus_epi16(outlo, outhi);
+
+            max = _mm_load_si128((__m128i *)ar_max);
+            __m128i temp = _mm_min_epu8(out, max);
+            temp = _mm_cmpeq_epi8(temp, max);
             out = _mm_or_si128(temp, out);
 
-            __m128i xmin = _mm_load_si128((__m128i *)ar_min);
-            temp = _mm_max_epu8(out, xmin);
-            temp = _mm_cmpeq_epi8(temp, xmin);
+            min = _mm_load_si128((__m128i *)ar_min);
+            temp = _mm_max_epu8(out, min);
+            temp = _mm_cmpeq_epi8(temp, min);
             out = _mm_andnot_si128(temp, out);
 
             _mm_store_si128((__m128i *)(dstp + x), out);
@@ -168,8 +186,10 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy16(p1, srcp, width, 1);
     srcp += stride;
 
-    uint16_t th_min = eh->min > eh->plane_max ? eh->plane_max : (uint16_t)eh->min;
-    uint16_t th_max = eh->max > eh->plane_max ? eh->plane_max : (uint16_t)eh->max;
+    uint16_t th_min = eh->min > eh->plane_max ? eh->plane_max :
+                                                 (uint16_t)eh->min;
+    uint16_t th_max = eh->max > eh->plane_max ? eh->plane_max :
+                                                 (uint16_t)eh->max;
 
     GF_ALIGN uint16_t ar_min[8];
     GF_ALIGN uint16_t ar_max[8];
@@ -188,57 +208,63 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             { p0 - 1, p0 + 1, p0    , p2 - 1, p2 + 1, p2     }
         };
         for (int x = 0; x < width; x += 8) {
-            __m128i abs = _mm_setzero_si128();
+            __m128i sum[2];
 
             for (int i = 0; i < 2; i++) {
-                __m128i sum, xmm0, xmm1, all1, one;
+                __m128i xmm0, xmm1, all1, one;
 
-                sum = _mm_loadu_si128((__m128i *)(array[i][0] + x));
+                sum[i] = _mm_loadu_si128((__m128i *)(array[i][0] + x));
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][1] + x));
-                sum  = _mm_add_epi16(sum, xmm0);
+                sum[i] = _mm_add_epi16(sum[i], xmm0);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][2] + x));
                 xmm0 = _mm_slli_epi16(xmm0, 1);
-                sum  = _mm_add_epi16(sum, xmm0);
+                sum[i] = _mm_add_epi16(sum[i], xmm0);
 
                 all1 = _mm_cmpeq_epi32(xmm0, xmm0);
                 one = _mm_srli_epi16(all1, 15);
-                sum = _mm_add_epi16(one, _mm_xor_si128(sum, all1));
+                sum[i] = _mm_add_epi16(one, _mm_xor_si128(sum[i], all1));
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][3] + x));
-                sum  = _mm_add_epi16(sum, xmm0);
+                sum[i] = _mm_add_epi16(sum[i], xmm0);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][4] + x));
-                sum  = _mm_add_epi16(sum, xmm0);
+                sum[i] = _mm_add_epi16(sum[i], xmm0);
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][5] + x));
                 xmm0 = _mm_slli_epi16(xmm0, 1);
-                sum  = _mm_add_epi16(sum, xmm0);
+                sum[i]  = _mm_add_epi16(sum[i], xmm0);
 
-                xmm0 = _mm_cmpgt_epi16(sum, _mm_setzero_si128());
-                xmm1 = _mm_add_epi16(one, _mm_xor_si128(sum, all1));
-                sum  = _mm_or_si128(_mm_and_si128(sum, xmm0),
-                                    _mm_andnot_si128(xmm0, xmm1));
-                abs  = _mm_add_epi16(abs, sum);
+                xmm0 = _mm_cmpgt_epi16(sum[i], _mm_setzero_si128());
+                xmm1 = _mm_add_epi16(one, _mm_xor_si128(sum[i], all1));
+                sum[i] = _mm_or_si128(_mm_and_si128(sum[i], xmm0),
+                                      _mm_andnot_si128(xmm0, xmm1));
             }
 
-            __m128i xmax = _mm_load_si128((__m128i *)ar_max);
-            __m128i xmin = _mm_load_si128((__m128i *)ar_min);
+            __m128i xmul = _mm_load_si128((__m128i *)fifteens);
+            __m128i max = _mm_max_epi16(sum[0], sum[1]);
+            __m128i min = _mm_min_epi16(sum[0], sum[1]);
+            max = _mm_srli_epi16(_mm_mullo_epi16(max, xmul), 4);
+            min = _mm_srli_epi16(_mm_mullo_epi16(min, xmul), 5);
+            __m128i out = _mm_add_epi16(max, min);
+            
+            max = _mm_load_si128((__m128i *)ar_max);
+            min = _mm_load_si128((__m128i *)ar_min);
             __m128i pmax = _mm_load_si128((__m128i *)ar_pmax);
 
-            abs = _mm_srli_epi16(abs, eh->rshift);
-            abs = _mm_min_epi16(abs, xmax);
-            abs = _mm_max_epi16(abs, xmin);
+            out = _mm_srli_epi16(out, eh->rshift);
+            out = _mm_min_epi16(out, max);
+            out = _mm_max_epi16(out, min);
 
-            __m128i temp = _mm_cmpeq_epi16(abs, xmax);
+            __m128i temp = _mm_cmpeq_epi16(out, max);
             temp = _mm_and_si128(temp, pmax);
-            abs  = _mm_or_si128(abs, temp);
+            out  = _mm_or_si128(out, temp);
 
-            temp = _mm_cmpeq_epi16(abs, xmin);
-            abs = _mm_andnot_si128(temp, abs);
+            temp = _mm_cmpeq_epi16(out, min);
+            out = _mm_andnot_si128(temp, out);
 
-            _mm_store_si128((__m128i *)(dstp + x), abs);
+            _mm_store_si128((__m128i *)(dstp + x), out);
         }
         srcp += stride * (y < height - 2);
         dstp += stride;
@@ -248,6 +274,12 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     }
 }
 
+#define ALPHA ((float)0.96043387)
+#define BETA ((float)0.39782473)
+static const GF_ALIGN float ar_alpha[4] = {ALPHA, ALPHA, ALPHA, ALPHA};
+static const GF_ALIGN float ar_beta[4] = {BETA, BETA, BETA, BETA};
+#undef ALPHA
+#undef BETA
 
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
@@ -284,93 +316,98 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
         for (int x = 0; x < width; x += 8) {
             __m128i zero = _mm_setzero_si128();
             __m128i all1 = _mm_cmpeq_epi32(zero, zero);
-            __m128i abs_lo = zero;
-            __m128i abs_hi = zero;
+            __m128i sumlo[2];
+            __m128i sumhi[2];
 
             for (int i = 0; i < 2; i++) {
-                __m128i sum_lo, sum_hi, xmm0, xmm1, one;
+                __m128i xmm0, xmm1, one;
 
                 xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
-                sum_lo = _mm_unpackhi_epi16(xmm0, zero);
-                sum_hi = _mm_unpacklo_epi16(xmm0, zero);
+                sumlo[i] = _mm_unpacklo_epi16(xmm0, zero);
+                sumhi[i] = _mm_unpackhi_epi16(xmm0, zero);
 
-                xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i][1] + x));
                 xmm1 = _mm_unpackhi_epi16(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi16(xmm0, zero);
-                sum_lo = _mm_add_epi32(sum_lo, xmm0);
-                sum_hi = _mm_add_epi32(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi32(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi32(sumhi[i], xmm1);
 
-                xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
-                xmm1 = _mm_unpackhi_epi16(xmm0, zero);
-                xmm1 = _mm_slli_epi32(xmm1, 1);
-                xmm0 = _mm_unpacklo_epi16(xmm0, zero);
-                xmm0 = _mm_slli_epi32(xmm0, 1);
-                sum_lo = _mm_add_epi32(sum_lo, xmm0);
-                sum_hi = _mm_add_epi32(sum_hi, xmm1);
-
-                one = _mm_srli_epi16(all1, 15);
-                sum_lo = _mm_add_epi32(one, _mm_xor_si128(sum_lo, all1));
-                sum_hi = _mm_add_epi32(one, _mm_xor_si128(sum_hi, all1));
-
-                xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
-                xmm1 = _mm_unpackhi_epi16(xmm0, zero);
-                xmm0 = _mm_unpacklo_epi16(xmm0, zero);
-                sum_lo = _mm_add_epi32(sum_lo, xmm0);
-                sum_hi = _mm_add_epi32(sum_hi, xmm1);
-
-                xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
-                xmm1 = _mm_unpackhi_epi16(xmm0, zero);
-                xmm0 = _mm_unpacklo_epi16(xmm0, zero);
-                sum_lo = _mm_add_epi32(sum_lo, xmm0);
-                sum_hi = _mm_add_epi32(sum_hi, xmm1);
-
-                xmm0 = _mm_loadu_si128((__m128i *)(array[i][0] + x));
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i][2] + x));
                 xmm1 = _mm_slli_epi32(_mm_unpackhi_epi16(xmm0, zero), 1);
                 xmm0 = _mm_slli_epi32(_mm_unpacklo_epi16(xmm0, zero), 1);
-                sum_lo = _mm_add_epi32(sum_lo, xmm0);
-                sum_hi = _mm_add_epi32(sum_hi, xmm1);
+                sumlo[i] = _mm_add_epi32(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi32(sumhi[i], xmm1);
 
-                xmm0 = _mm_cmpgt_epi32(sum_lo, zero);
-                xmm1 = _mm_add_epi32(one, _mm_xor_si128(sum_lo, all1));
-                sum_lo = _mm_or_si128(_mm_and_si128(sum_lo, xmm0),
-                                      _mm_andnot_si128(xmm0, xmm1));
+                one = _mm_srli_epi32(all1, 31);
+                sumlo[i] = _mm_add_epi32(one, _mm_xor_si128(sumlo[i], all1));
+                sumhi[i] = _mm_add_epi32(one, _mm_xor_si128(sumhi[i], all1));
 
-                xmm0 = _mm_cmpgt_epi32(sum_hi, zero);
-                xmm1 = _mm_add_epi32(one, _mm_xor_si128(sum_hi, all1));
-                sum_hi = _mm_or_si128(_mm_and_si128(sum_hi, xmm0),
-                                      _mm_andnot_si128(xmm0, xmm1));
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i][3] + x));
+                xmm1 = _mm_unpackhi_epi16(xmm0, zero);
+                xmm0 = _mm_unpacklo_epi16(xmm0, zero);
+                sumlo[i] = _mm_add_epi32(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi32(sumhi[i], xmm1);
 
-                abs_lo = _mm_add_epi32(abs_lo, sum_lo);
-                abs_hi = _mm_add_epi32(abs_hi, sum_hi);
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i][4] + x));
+                xmm1 = _mm_unpackhi_epi16(xmm0, zero);
+                xmm0 = _mm_unpacklo_epi16(xmm0, zero);
+                sumlo[i] = _mm_add_epi32(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi32(sumhi[i], xmm1);
+
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i][5] + x));
+                xmm1 = _mm_slli_epi32(_mm_unpackhi_epi16(xmm0, zero), 1);
+                xmm0 = _mm_slli_epi32(_mm_unpacklo_epi16(xmm0, zero), 1);
+                sumlo[i] = _mm_add_epi32(sumlo[i], xmm0);
+                sumhi[i] = _mm_add_epi32(sumhi[i], xmm1);
+
+                xmm0 = _mm_cmpgt_epi32(sumlo[i], zero);
+                xmm1 = _mm_add_epi32(one, _mm_xor_si128(sumlo[i], all1));
+                sumlo[i] = _mm_or_si128(_mm_and_si128(sumlo[i], xmm0),
+                                         _mm_andnot_si128(xmm0, xmm1));
+
+                xmm0 = _mm_cmpgt_epi32(sumhi[i], zero);
+                xmm1 = _mm_add_epi32(one, _mm_xor_si128(sumhi[i], all1));
+                sumhi[i] = _mm_or_si128(_mm_and_si128(sumhi[i], xmm0),
+                                         _mm_andnot_si128(xmm0, xmm1));
             }
 
-            abs_lo = _mm_srli_epi32(abs_lo, eh->rshift);
-            abs_hi = _mm_srli_epi32(abs_hi, eh->rshift);
+            __m128 alpha = _mm_load_ps(ar_alpha);
+            __m128 beta = _mm_load_ps(ar_beta);
+            
+            __m128 max = _mm_cvtepi32_ps(mm_max_epi32(sumlo[0], sumlo[1]));
+            __m128 min = _mm_cvtepi32_ps(mm_min_epi32(sumlo[0], sumlo[1]));
+            max = _mm_mul_ps(max, alpha);
+            min = _mm_mul_ps(min, beta);
+            __m128i outlo = _mm_cvtps_epi32(_mm_add_ps(max, min));
+            
+            max = _mm_cvtepi32_ps(mm_max_epi32(sumhi[0], sumhi[1]));
+            min = _mm_cvtepi32_ps(mm_min_epi32(sumhi[0], sumhi[1]));
+            max = _mm_mul_ps(max, alpha);
+            min = _mm_mul_ps(min, beta);
+            __m128i outhi = _mm_cvtps_epi32(_mm_add_ps(max, min));
+            
+            outlo = _mm_srli_epi32(outlo, eh->rshift);
+            outhi = _mm_srli_epi32(outhi, eh->rshift);
 
             __m128i temp = _mm_srli_epi32(all1, 16);
-            abs_lo = _mm_or_si128(_mm_cmpgt_epi32(abs_lo, temp), abs_lo);
-            abs_lo = _mm_and_si128(abs_lo, temp);
-            abs_hi = _mm_or_si128(_mm_cmpgt_epi32(abs_hi, temp), abs_hi);
-            abs_hi = _mm_and_si128(abs_hi, temp);
+            outlo = _mm_or_si128(_mm_cmpgt_epi32(outlo, temp), outlo);
+            outlo = _mm_and_si128(outlo, temp);
+            outhi = _mm_or_si128(_mm_cmpgt_epi32(outhi, temp), outhi);
+            outhi = _mm_and_si128(outhi, temp);
 
-            abs_lo = _mm_shufflelo_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
-            abs_lo = _mm_shufflehi_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
-            abs_hi = _mm_shufflelo_epi16(abs_hi, _MM_SHUFFLE(2, 0, 3, 1));
-            abs_hi = _mm_shufflehi_epi16(abs_hi, _MM_SHUFFLE(2, 0, 3, 1));
-            abs_lo = _mm_or_si128(abs_lo, abs_hi);
-            abs_lo = _mm_shuffle_epi32(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
+            outlo = mm_cast_epi32(outlo, outhi);
 
             __m128i xxx = _mm_load_si128((__m128i *)ar_max);
-            temp = MM_MIN_EPU16(abs_lo, xxx);
+            temp = MM_MIN_EPU16(outlo, xxx);
             temp = _mm_cmpeq_epi16(temp, xxx);
-            abs_lo = _mm_or_si128(temp, abs_lo);
+            outlo = _mm_or_si128(temp, outlo);
 
             xxx = _mm_load_si128((__m128i *)ar_min);
-            temp = MM_MAX_EPU16(abs_lo, xxx);
+            temp = MM_MAX_EPU16(outlo, xxx);
             temp = _mm_cmpeq_epi16(temp, xxx);
-            abs_lo = _mm_andnot_si128(temp, abs_lo);
+            outlo = _mm_andnot_si128(temp, outlo);
 
-            _mm_store_si128((__m128i *)(dstp + x), abs_lo);
+            _mm_store_si128((__m128i *)(dstp + x), outlo);
         }
         srcp += stride * (y < height - 2);
         dstp += stride;

@@ -327,12 +327,7 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             abs_hi = _mm_or_si128(_mm_cmpgt_epi32(abs_hi, xmm0), abs_hi);
             abs_hi = _mm_and_si128(abs_hi, xmm0);
 
-            abs_lo = _mm_shufflelo_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
-            abs_lo = _mm_shufflehi_epi16(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
-            abs_hi = _mm_shufflelo_epi16(abs_hi, _MM_SHUFFLE(2, 0, 3, 1));
-            abs_hi = _mm_shufflehi_epi16(abs_hi, _MM_SHUFFLE(2, 0, 3, 1));
-            abs_lo = _mm_or_si128(abs_lo, abs_hi);
-            abs_lo = _mm_shuffle_epi32(abs_lo, _MM_SHUFFLE(3, 1, 2, 0));
+            abs_lo = mm_cast_epi32(abs_lo, abs_hi);
 
             __m128i xxx = _mm_load_si128((__m128i *)ar_max);
             xmm0 = MM_MIN_EPU16(abs_lo, xxx);
