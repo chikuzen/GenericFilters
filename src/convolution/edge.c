@@ -35,8 +35,9 @@ edge_get_frame(generic_handler_t *gh, const VSFormat *fi, const VSFrameRef **fr,
     edge_t *eh = gh->fdata;
 
     int bps = fi->bytesPerSample;
+    int bheight = eh->function == tedge ? 5 : 3;
     int bstride = ((vsapi->getFrameWidth(src, 0) * bps + 32 + 15) / 16) * 16;
-    uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * 3, 16);
+    uint8_t *buff = (uint8_t *)_aligned_malloc(bstride * bheight, 16);
     if (!buff) {
         return;
     }
@@ -73,7 +74,12 @@ set_edge_data(generic_handler_t *gh, filter_id_t id, char *msg, const VSMap *in,
     RET_IF_ERROR(!eh, "failed to allocate filter data");
     gh->fdata = eh;
 
-    eh->function = id == ID_SOBEL ? sobel : prewitt;
+    eh->function = sobel;
+    if (id == ID_PREWITT) {
+        eh->function = prewitt;
+    } else if (id == ID_TEDGE) {
+        eh->function = tedge;
+    }
 
     int err;
 

@@ -44,5 +44,6 @@ struct filter_data {
 
 extern const proc_edge_detection sobel[];
 extern const proc_edge_detection prewitt[];
+extern const proc_edge_detection tedge[];
 
 #endif // EDGE_DETECTION_FILTER_HEADER

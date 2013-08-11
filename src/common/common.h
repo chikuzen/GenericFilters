@@ -56,6 +56,7 @@ typedef enum {
     ID_BLUR,
     ID_SOBEL,
     ID_PREWITT,
+    ID_TEDGE,
     ID_MAXIMUM,
     ID_MEDIAN,
     ID_MINIMUM,

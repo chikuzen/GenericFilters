@@ -146,6 +146,18 @@ max: same as Sobel.
 
 rshift: same as Sobel.
 
+TEdge:
+----
+Detect edge using the kernel like TEdgeMask(type=2).
+
+    generic.TEdge(clip clip[, int min, int max, int[] planes, int rshift])
+
+min: same as Sobel.
+
+max: same as Sobel.
+
+rshift: same as Sobel.
+
 Inflate:
 --------
 Local(3x3) average by taking into account only values higher than the pixel.::

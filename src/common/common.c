@@ -137,6 +137,7 @@ static setter_t get_setter(const char *filter_name)
         { "Blur",          { set_blur,           ID_BLUR           } },
         { "Sobel",         { set_edge,           ID_SOBEL          } },
         { "Prewitt",       { set_edge,           ID_PREWITT        } },
+        { "TEdge",         { set_edge,           ID_TEDGE          } },
         { "Maximum",       { set_neighbors,      ID_MAXIMUM        } },
         { "Median",        { set_neighbors,      ID_MEDIAN         } },
         { "Minimum",       { set_neighbors,      ID_MINIMUM        } },
@@ -249,6 +250,9 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
     reg("Prewitt",
         "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;rshift:int:opt;",
         create_filter_common, (void *)"Prewitt", plugin);
+    reg("TEdge",
+        "clip:clip;min:int:opt;max:int:opt;planes:int[]:opt;rshift:int:opt;",
+        create_filter_common, (void *)"TEdge", plugin);
     reg("Minimum",
         "clip:clip;planes:int[]:opt;threshold:int:opt;coordinates:int[]:opt",
         create_filter_common, (void *)"Minimum", plugin);

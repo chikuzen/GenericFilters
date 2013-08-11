@@ -71,6 +71,35 @@ static inline __m128i mm_min_epi32(__m128i xmm0, __m128i xmm1)
 }
 
 
+static inline __m128i mm_abs_epi16(__m128i xmm0)
+{
+    __m128i all1 = _mm_cmpeq_epi32(xmm0, xmm0);
+    __m128i mask = _mm_cmpgt_epi16(xmm0, _mm_setzero_si128());
+    __m128i temp = _mm_add_epi16(_mm_xor_si128(xmm0, all1),
+                                 _mm_srli_epi16(all1, 15));
+    return _mm_or_si128(_mm_and_si128(mask, xmm0),
+                         _mm_andnot_si128(mask, temp));
+}
+
+
+static inline __m128i mm_abs_epi32(__m128i xmm0)
+{
+    __m128i all1 = _mm_cmpeq_epi32(xmm0, xmm0);
+    __m128i mask = _mm_cmpgt_epi32(xmm0, _mm_setzero_si128());
+    __m128i temp = _mm_add_epi32(_mm_xor_si128(xmm0, all1),
+                                 _mm_srli_epi32(all1, 31));
+    return _mm_or_si128(_mm_and_si128(mask, xmm0),
+                        _mm_andnot_si128(mask, temp));
+}
+
+
+static inline __m128 mm_abs_ps(__m128 xmm0)
+{
+    __m128i mask = _mm_srli_epi32((__m128i)_mm_cmpeq_ps(xmm0, xmm0), 1);
+    return _mm_and_ps(xmm0, (__m128)mask);
+}
+
+
 static inline void VS_CC
 line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)
 {
