@@ -65,8 +65,8 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             __m128i xmm0, xmm1, p1_lo, p1_hi;
 
             xmm0   = _mm_load_si128((__m128i *)(p1 + x));
-            p1_lo = _mm_slli_epi16(_mm_unpackhi_epi8(xmm0, zero), 1);
-            p1_hi = _mm_slli_epi16(_mm_unpacklo_epi8(xmm0, zero), 1);
+            p1_lo = _mm_slli_epi16(_mm_unpacklo_epi8(xmm0, zero), 1);
+            p1_hi = _mm_slli_epi16(_mm_unpackhi_epi8(xmm0, zero), 1);
 
             for (int i = 0; i < 8; i++) {
                 __m128i sum_lo = p1_lo;
