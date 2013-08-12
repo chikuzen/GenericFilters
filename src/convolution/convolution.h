@@ -31,7 +31,7 @@
 typedef struct filter_data convolution_t;
 
 typedef void (VS_CC *proc_convolution)(convolution_t *, uint8_t *, int, int,
-                                        int, int, uint8_t *, const uint8_t *);
+                                       int, int, uint8_t *, const uint8_t *);
 
 struct filter_data {
     int m[25];

@@ -95,8 +95,7 @@ static inline __m128i mm_abs_epi32(__m128i xmm0)
 
 static inline __m128 mm_abs_ps(__m128 xmm0)
 {
-    __m128i mask = _mm_srli_epi32((__m128i)_mm_cmpeq_ps(xmm0, xmm0), 1);
-    return _mm_and_ps(xmm0, (__m128)mask);
+    return _mm_and_ps(xmm0, (__m128)_mm_set1_epi32(0x7FFFFFFF));
 }
 
 

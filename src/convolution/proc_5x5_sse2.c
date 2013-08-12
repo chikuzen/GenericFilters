@@ -44,11 +44,8 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
-    __m128i all1 = _mm_cmpeq_epi32(zero, zero);
-    __m128i one = _mm_srli_epi16(all1, 15);
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
     __m128 bias = _mm_set1_ps((float)ch->bias);
-
     __m128i matrix[25];
     for (int i = 0; i < 25; i++) {
         matrix[i] = _mm_unpacklo_epi16(_mm_set1_epi16((int16_t)ch->m[i]), zero);
@@ -56,22 +53,21 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
     for (int y = 0; y < height; y++) {
         line_copy8(p4, srcp, width, 2);
+        uint8_t *array[] = {
+            p0 - 2, p0 - 1, p0, p0 + 1, p0 + 2,
+            p1 - 2, p1 - 1, p1, p1 + 1, p1 + 2,
+            p2 - 2, p2 - 1, p2, p2 + 1, p2 + 2,
+            p3 - 2, p3 - 1, p3, p3 + 1, p3 + 2,
+            p4 - 2, p4 - 1, p4, p4 + 1, p4 + 2
+        };
 
         for (int x = 0; x < width; x += 16) {
             __m128i sum[4] = { zero, zero, zero, zero };
 
-            uint8_t *array[] = {
-                p0 + x - 2, p0 + x - 1, p0 + x, p0 + x + 1, p0 + x + 2,
-                p1 + x - 2, p1 + x - 1, p1 + x, p1 + x + 1, p1 + x + 2,
-                p2 + x - 2, p2 + x - 1, p2 + x, p2 + x + 1, p2 + x + 2,
-                p3 + x - 2, p3 + x - 1, p3 + x, p3 + x + 1, p3 + x + 2,
-                p4 + x - 2, p4 + x - 1, p4 + x, p4 + x + 1, p4 + x + 2
-            };
-
             for (int i = 0; i < 25; i++) {
                 __m128i xmm0, xmm1, xmm2;
 
-                xmm0 = _mm_loadu_si128((__m128i *)array[i]);
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i] + x));
                 xmm2 = _mm_unpackhi_epi8(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi8(xmm0, zero);
                 
@@ -90,22 +86,14 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 __m128 sumfp = _mm_cvtepi32_ps(sum[i]);
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
+                if (!ch->saturate) {
+                    sumfp = mm_abs_ps(sumfp);
+                }
                 sum[i] = _mm_cvttps_epi32(sumfp);
             }
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
             sum[1] = _mm_packs_epi32(sum[2], sum[3]);
-
-           if (!ch->saturate) {
-                for (int i = 0; i < 2; i++) {
-                    __m128i mask = _mm_cmplt_epi16(sum[i], zero);
-                    __m128i temp = _mm_add_epi16(one, _mm_xor_si128(sum[i], all1));
-                    temp = _mm_and_si128(temp, mask);
-                    sum[i] = _mm_andnot_si128(mask, sum[i]);
-                    sum[i] = _mm_or_si128(sum[i], temp);
-                }
-            }
-
             sum[0] = _mm_packus_epi16(sum[0], sum[1]);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
@@ -146,11 +134,8 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
-    __m128i all1 = _mm_cmpeq_epi32(zero, zero);
-    __m128i one = _mm_srli_epi16(all1, 15);
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
     __m128 bias = _mm_set1_ps((float)ch->bias);
-
     __m128i matrix[25];
     for (int i = 0; i < 25; i++) {
         matrix[i] = _mm_unpacklo_epi16(_mm_set1_epi16((int16_t)ch->m[i]), zero);
@@ -158,22 +143,21 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
     for (int y = 0; y < height; y++) {
         line_copy16(p4, srcp, width, 2);
-
+        uint16_t *array[] = {
+            p0 - 2, p0 - 1, p0, p0 + 1, p0 + 2,
+            p1 - 2, p1 - 1, p1, p1 + 1, p1 + 2,
+            p2 - 2, p2 - 1, p2, p2 + 1, p2 + 2,
+            p3 - 2, p3 - 1, p3, p3 + 1, p3 + 2,
+            p4 - 2, p4 - 1, p4, p4 + 1, p4 + 2
+        };
+        
         for (int x = 0; x < width; x += 8) {
             __m128i sum[2] = { zero, zero };
-            
-            uint16_t *array[] = {
-                p0 + x - 2, p0 + x - 1, p0 + x, p0 + x + 1, p0 + x + 2,
-                p1 + x - 2, p1 + x - 1, p1 + x, p1 + x + 1, p1 + x + 2,
-                p2 + x - 2, p2 + x - 1, p2 + x, p2 + x + 1, p2 + x + 2,
-                p3 + x - 2, p3 + x - 1, p3 + x, p3 + x + 1, p3 + x + 2,
-                p4 + x - 2, p4 + x - 1, p4 + x, p4 + x + 1, p4 + x + 2
-            };
 
             for (int i = 0; i < 25; i++) {
                 __m128i xmm0, xmm1;
 
-                xmm0 = _mm_loadu_si128((__m128i *)array[i]);
+                xmm0 = _mm_loadu_si128((__m128i *)(array[i] + x));
                 xmm1 = _mm_unpackhi_epi16(xmm0, zero);
                 xmm0 = _mm_unpacklo_epi16(xmm0, zero);
                 sum[0] = _mm_add_epi32(sum[0], _mm_madd_epi16(xmm0, matrix[i]));
@@ -184,20 +168,15 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
                 __m128 sumfp = _mm_cvtepi32_ps(sum[i]);
                 sumfp = _mm_mul_ps(sumfp, rdiv);
                 sumfp = _mm_add_ps(sumfp, bias);
+                if (!ch->saturate) {
+                    sumfp = mm_abs_ps(sumfp);
+                }
                 sum[i] = _mm_cvttps_epi32(sumfp);
             }
 
             sum[0] = _mm_packs_epi32(sum[0], sum[1]);
-
             __m128i mask = _mm_cmpgt_epi16(sum[0], zero);
-            if (ch->saturate) {
-                sum[0] = _mm_and_si128(sum[0], mask);
-            } else {
-                __m128i temp = _mm_add_epi16(one, _mm_xor_si128(sum[0], all1));
-                temp = _mm_andnot_si128(mask, temp);
-                sum[0] = _mm_and_si128(sum[0], mask);
-                sum[0] = _mm_or_si128(sum[0], temp);
-            }
+            sum[0] = _mm_and_si128(sum[0], mask);
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
@@ -237,76 +216,53 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
-    __m128i all1 = _mm_cmpeq_epi32(zero, zero);
-    __m128i one = _mm_srli_epi32(all1, 31);
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
     __m128 bias = _mm_set1_ps((float)ch->bias);
-
-    __m128i matrix[25];
-    int sign[25];
+    __m128i max = _mm_set1_epi32(0xFFFF);
+    __m128 matrix[25];
     for (int i = 0; i < 25; i++) {
-        sign[i] = ch->m[i] < 0 ? 1 : 0;
-        uint16_t val = sign[i] ? (uint16_t)(ch->m[i] * -1) : (uint16_t)ch->m[i];
-        matrix[i] = _mm_set1_epi16((int16_t)val);
+        matrix[i] = _mm_set1_ps((float)ch->m[i]);
     }
 
     for (int y = 0; y < height; y++) {
         line_copy16(p4, srcp, width, 2);
-
+        uint16_t *array[] = {
+            p0 - 2, p0 - 1, p0, p0 + 1, p0 + 2,
+            p1 - 2, p1 - 1, p1, p1 + 1, p1 + 2,
+            p2 - 2, p2 - 1, p2, p2 + 1, p2 + 2,
+            p3 - 2, p3 - 1, p3, p3 + 1, p3 + 2,
+            p4 - 2, p4 - 1, p4, p4 + 1, p4 + 2
+        };
+        
         for (int x = 0; x < width; x += 8) {
-            __m128i sum[2] = { _mm_setzero_si128(), _mm_setzero_si128() };
-
-            uint16_t *array[] = {
-                p0 + x - 2, p0 + x - 1, p0 + x, p0 + x + 1, p0 + x + 2,
-                p1 + x - 2, p1 + x - 1, p1 + x, p1 + x + 1, p1 + x + 2,
-                p2 + x - 2, p2 + x - 1, p2 + x, p2 + x + 1, p2 + x + 2,
-                p3 + x - 2, p3 + x - 1, p3 + x, p3 + x + 1, p3 + x + 2,
-                p4 + x - 2, p4 + x - 1, p4 + x, p4 + x + 1, p4 + x + 2
-            };
+            __m128 sum[2] = {(__m128)zero, (__m128)zero};
 
             for (int i = 0; i < 25; i++) {
-                __m128i xmm0, xmm1, xmm2;
-
-                xmm0 = _mm_loadu_si128((__m128i *)array[i]);
-
-                xmm1 = _mm_mullo_epi16(xmm0, matrix[i]);
-                xmm0 = _mm_mulhi_epu16(xmm0, matrix[i]);
-                xmm2 = _mm_unpacklo_epi16(xmm1, xmm0);
-                xmm0 = _mm_unpackhi_epi16(xmm1, xmm0);
-
-                if (sign[i]) {
-                    xmm2 = _mm_add_epi32(one, _mm_xor_si128(xmm2, all1));
-                    xmm0 = _mm_add_epi32(one, _mm_xor_si128(xmm0, all1));
-                }
-                sum[0] = _mm_add_epi32(sum[0], xmm2);
-                sum[1] = _mm_add_epi32(sum[1], xmm0);
+                __m128i xmm0 = _mm_loadu_si128((__m128i *)(array[i] + x));
+                __m128 xmm1 = _mm_cvtepi32_ps(_mm_unpacklo_epi16(xmm0, zero));
+                __m128 xmm2 = _mm_cvtepi32_ps(_mm_unpackhi_epi16(xmm0, zero));
+                xmm1 = _mm_mul_ps(xmm1, matrix[i]);
+                xmm2 = _mm_mul_ps(xmm2, matrix[i]);
+                sum[0] = _mm_add_ps(sum[0], xmm1);
+                sum[1] = _mm_add_ps(sum[1], xmm2);
             }
 
+            __m128i sumi[2];
             for (int i = 0; i < 2; i++) {
-                __m128 sumfp;
-                __m128i mask, temp;
-                sumfp  = _mm_cvtepi32_ps(sum[i]);
-                sumfp  = _mm_mul_ps(sumfp, rdiv);
-                sumfp  = _mm_add_ps(sumfp, bias);
-                sum[i] = _mm_cvttps_epi32(sumfp);
-
-                temp = _mm_srli_epi32(all1, 16);
-                mask = _mm_cmplt_epi32(sum[i], temp);
-                sum[i] = _mm_or_si128(_mm_and_si128(sum[i], mask),
-                                      _mm_andnot_si128(mask, temp));
-                mask = _mm_cmpgt_epi32(sum[i], zero);
-                if (ch->saturate) {
-                    sum[i] = _mm_and_si128(mask, sum[i]);
-                } else {
-                    temp = _mm_add_epi32(one, _mm_xor_si128(sum[i], all1));
-                    sum[i] = _mm_or_si128(_mm_and_si128(mask, sum[i]),
-                                          _mm_andnot_si128(mask, temp));
+                sum[i]  = _mm_mul_ps(sum[i], rdiv);
+                sum[i]  = _mm_add_ps(sum[i], bias);
+                if (!ch->saturate) {
+                    sum[i] = mm_abs_ps(sum[i]);
                 }
+                sumi[i] = _mm_cvtps_epi32(sum[i]);
+                sumi[i] = mm_min_epi32(sumi[i], max);
+                __m128i mask = _mm_cmpgt_epi32(sumi[i], zero);
+                sumi[i] = _mm_and_si128(sumi[i], mask);
             }
 
-            sum[0] = mm_cast_epi32(sum[0], sum[1]);
+            sumi[0] = mm_cast_epi32(sumi[0], sumi[1]);
 
-            _mm_store_si128((__m128i *)(dstp + x), sum[0]);
+            _mm_store_si128((__m128i *)(dstp + x), sumi[0]);
         }
 
         srcp += stride * (y < height - 3);
