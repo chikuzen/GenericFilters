@@ -33,7 +33,7 @@
 #define snprintf _snprintf
 #endif
 
-#define GENERIC_FILTERS_VERSION "0.5.0"
+#define GENERIC_FILTERS_VERSION "0.6.0"
 
 
 typedef struct generic_handler generic_handler_t;

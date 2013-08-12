@@ -31,12 +31,12 @@
 typedef struct filter_data edge_t;
 
 typedef void (VS_CC *proc_edge_detection)(uint8_t *, int, int, int, int,
-                                           uint8_t *, const uint8_t *, edge_t *);
+                                          uint8_t *, const uint8_t *, edge_t *,
+                                          uint16_t);
 
 struct filter_data {
     int min;
     int max;
-    uint16_t plane_max;
     int rshift;
     const proc_edge_detection *function;
 };

@@ -40,7 +40,8 @@
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-               uint8_t *dstp, const uint8_t *srcp, edge_t *eh)
+               uint8_t *dstp, const uint8_t *srcp, edge_t *eh,
+               uint16_t plane_max)
 {
     uint8_t *p0 = buff + 16;
     uint8_t *p1 = p0 + bstride;
@@ -155,7 +156,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 static void GF_FUNC_ALIGN VS_CC
 proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-                uint8_t *d, const uint8_t *s, edge_t *eh)
+                uint8_t *d, const uint8_t *s, edge_t *eh, uint16_t plane_max)
 {
     const uint16_t *srcp = (uint16_t *)s;
     uint16_t *dstp = (uint16_t *)d;
@@ -171,17 +172,15 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy16(p1, srcp, width, 1);
     srcp += stride;
 
-    uint16_t th_min = eh->min > eh->plane_max ? eh->plane_max :
-                                                (uint16_t)eh->min;
-    uint16_t th_max = eh->max > eh->plane_max ? eh->plane_max :
-                                                (uint16_t)eh->max;
+    uint16_t th_min = eh->min > plane_max ? plane_max : (uint16_t)eh->min;
+    uint16_t th_max = eh->max > plane_max ? plane_max : (uint16_t)eh->max;
 
     __m128i xm15 = _mm_set1_epi16(15);
     __m128i all1 = _mm_cmpeq_epi32(xm15, xm15);
     __m128i one = _mm_srli_epi16(all1, 15);
     __m128i min = _mm_set1_epi16((int16_t)th_min);
     __m128i max = _mm_set1_epi16((int16_t)th_max);
-    __m128i pmax = _mm_set1_epi16((int16_t)eh->plane_max);
+    __m128i pmax = _mm_set1_epi16((int16_t)plane_max);
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
@@ -248,7 +247,7 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
 static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
-                uint8_t *d, const uint8_t *s, edge_t *eh)
+                uint8_t *d, const uint8_t *s, edge_t *eh, uint16_t plane_max)
 {
     const uint16_t *srcp = (uint16_t *)s;
     uint16_t *dstp = (uint16_t *)d;

@@ -43,7 +43,7 @@ edge_get_frame(generic_handler_t *gh, const VSFormat *fi, const VSFrameRef **fr,
     }
 
     int idx = bps == 1 ? 0 : fi->bitsPerSample == 16 ? 2 : 1;
-    eh->plane_max = (uint16_t)((1 << fi->bitsPerSample) - 1);
+    uint16_t plane_max = (uint16_t)((1 << fi->bitsPerSample) - 1);
 
     for (int plane = 0; plane < fi->numPlanes; plane++) {
         if (fr[plane]) {
@@ -60,7 +60,7 @@ edge_get_frame(generic_handler_t *gh, const VSFormat *fi, const VSFrameRef **fr,
                           vsapi->getStride(src, plane),
                           vsapi->getWritePtr(dst, plane),
                           vsapi->getReadPtr(src, plane),
-                          eh);
+                          eh, plane_max);
     }
     _aligned_free(buff);
 }
