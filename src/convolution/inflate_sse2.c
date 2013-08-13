@@ -23,7 +23,7 @@
 
 #include "xxflate.h"
 #include "sse2.h"
-#include "convolution_utils.h"
+
 
 #define COORDINATES {\
     p0 - 1, p0, p0 + 1,\
