@@ -47,8 +47,6 @@ static footprint_t *
 create_footprint(int width, int height, int stride, int is_16bit,
                  const uint8_t *altp, uint8_t *dstp)
 {
-#define INITIAL_XY_SIZE (320 * 240)
-
     footprint_t *fp = (footprint_t *)malloc(sizeof(footprint_t));
     if (!fp) {
         return NULL;
@@ -60,14 +58,13 @@ create_footprint(int width, int height, int stride, int is_16bit,
         return NULL;
     }
 
-    fp->xy = (uint32_t *)malloc(INITIAL_XY_SIZE * sizeof(uint32_t));
+    fp->xy = (uint32_t *)malloc(width * height * sizeof(uint32_t));
     if (!fp->xy) {
         free(fp->map);
         free(fp);
         return NULL;
     }
 
-    fp->xy_size = INITIAL_XY_SIZE;
     fp->width = width;
     fp->height = height;
     fp->index = -1;
@@ -107,10 +104,6 @@ static void push_8bit(footprint_t *fp, int x, int y)
 {
     fp->dstp8[x + y * fp->stride] = fp->altp8[x + y * fp->stride];
     fp->map[x + y * fp->width] = 0xFF;
-    if (fp->index + 1 > fp->xy_size) {
-        fp->xy_size *= 2;
-        fp->xy = (uint32_t *)realloc(fp->xy, fp->xy_size * sizeof(uint32_t));
-    }
     fp->xy[++fp->index] = ((uint16_t)x << 16) | (uint16_t)y;
 }
 
@@ -119,10 +112,6 @@ static void push_16bit(footprint_t *fp, int x, int y)
 {
     fp->dstp16[x + y * fp->stride] = fp->altp16[x + y * fp->stride];
     fp->map[x + y * fp->width] = 0xFF;
-    if (fp->index + 1 > fp->xy_size) {
-        fp->xy_size *= 2;
-        fp->xy = (uint32_t *)realloc(fp->xy, fp->xy_size * sizeof(uint32_t));
-    }
     fp->xy[++fp->index] = ((uint16_t)x << 16) | (uint16_t)y;
 }
 
