@@ -158,7 +158,7 @@ rshift: same as Sobel.
 
 TEdge:
 ----
-Detect edge using the kernel like TEdgeMask(type=2).
+Detect edge using the kernel like TEdgeMask(type=2).::
 
     generic.TEdge(clip clip[, int min, int max, int[] planes, int rshift])
 
@@ -170,7 +170,7 @@ rshift: same as Sobel.
 
 Canny:
 ------
-Canny edge detection filter.
+Canny edge detection filter.::
 
     generic.Canny(clip clip[, float sigma, float th, float tl, int[] planes])
 
