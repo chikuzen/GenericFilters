@@ -122,6 +122,16 @@ ratio_v: The rate of the pixel of the top and bottom blended to a central pixel(
 
 planes - same as Minimum.
 
+GBlur:
+------
+Apply gaussian blur to the image.::
+
+    generic.GBlur(clip clip[, float sigma, int[] planes])
+
+sigma: standard deviation of gaussian blur(0 to 2.83). Default is 0.5.
+
+planes: same as Minimum.
+
 Sobel:
 ------
 Detect edge with Sobel operator.::
@@ -157,6 +167,20 @@ min: same as Sobel.
 max: same as Sobel.
 
 rshift: same as Sobel.
+
+Canny:
+------
+Canny edge detection filter.
+
+    generic.Canny(clip clip[, float sigma, float th, float tl, int[] planes])
+
+sigma: same as GBlur. 0 means not bluring before edge detection. Default is 1.5.
+
+th: high gradient magnitude threshold for hysteresis. Default is 8.0.
+
+tl: low gradient magnitude threshold for hysteresis. Default is 1.0.
+
+planes: same as Minimum.
 
 Inflate:
 --------
@@ -283,11 +307,7 @@ Examples:
     >>> clip = core.resize.Bicubic(std.Interleave([top, bottom]), height=height)
 
     - Unsharp Masking:
-    >>> blurred = generic.Convolution(clip, [2,  4,  5,  4, 2,
-                                             4,  9, 12,  9, 4,
-                                             5, 12, 15, 12, 5,
-                                             4,  9, 12,  9, 4,
-                                             2,  4,  5,  4, 2]) # gaussian blur
+    >>> blurred = generic.GBlur(clip, sigma=1.0)
     >>> clip = std.Expr([clip, blurred], "x x + y -")
 
     - Convert TV levels to PC levels(8bit YUV):
