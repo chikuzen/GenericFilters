@@ -93,30 +93,58 @@ static inline __m128i mm_abs_epi32(__m128i xmm0)
 }
 
 
-static inline __m128 mm_abs_ps(__m128 xmm0)
+static inline __m128 mm_abs_ps(const __m128 xmm0)
 {
-    return _mm_and_ps(xmm0, (__m128)_mm_set1_epi32(0x7FFFFFFF));
+    const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
+    return _mm_and_ps(xmm0, mask);
 }
 
 
-static inline void VS_CC
+static inline __m128 mm_ivtsign_ps(const __m128 xmm0)
+{
+    const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
+    return _mm_xor_ps(xmm0, mask);
+}
+
+
+static inline __m128 mm_rcp_hq_ps(const __m128 xmm0)
+{
+    __m128 rcp = _mm_rcp_ps(xmm0);
+    __m128 xmm1 =  _mm_mul_ps(_mm_mul_ps(xmm0, rcp), rcp);
+    rcp = _mm_add_ps(rcp, rcp);
+    return _mm_sub_ps(rcp, xmm1);
+}
+
+
+static inline void
 line_copy8(uint8_t *line, const uint8_t *srcp, int width, int mergin)
 {
     memcpy(line, srcp, width);
     for (int i = mergin; i > 0; i--) {
-        line[0 - i] = line[0];
-        line[width - 1 + i] = line[width - 1];
+        line[-i] = line[i];
+        line[width - 1 + i] = line[width - 1 - i];
     }
 }
 
 
-static inline void VS_CC
+static inline void
 line_copy16(uint16_t *line, const uint16_t *srcp, int width, int mergin)
 {
     memcpy(line, srcp, width * 2);
     for (int i = mergin; i > 0; i--) {
-        line[0 - i] = line[0];
-        line[width + i - 1] = line[width - 1];
+        line[-i] = line[i];
+        line[width - 1 + i] = line[width - 1 - i];
+    }
+}
+
+
+static inline void
+line_copyf(float *line, const float *srcp, int width, int mergin)
+{
+    memcpy(line, srcp, width * sizeof(float));
+    for (int i = mergin; i > 0; i--) {
+        line[-i] = line[i];
+        line[width - 1 + i] = line[width - 1 - i];
     }
 }
 

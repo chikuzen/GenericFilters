@@ -33,7 +33,7 @@
 #define snprintf _snprintf
 #endif
 
-#define GENERIC_FILTERS_VERSION "0.6.0"
+#define GENERIC_FILTERS_VERSION "0.7.0"
 
 
 typedef struct generic_handler generic_handler_t;
@@ -67,6 +67,8 @@ typedef enum {
     ID_DEFLATE,
     ID_BINARIZE,
     ID_BINARIZE2,
+    ID_CANNY,
+    ID_GAUSSIAN_BLUR
 } filter_id_t;
 
 
@@ -86,6 +88,7 @@ extern const set_filter_data_func set_levels;
 extern const set_filter_data_func set_xxflate;
 extern const set_filter_data_func set_binarize;
 extern const set_filter_data_func set_binarize2;
+extern const set_filter_data_func set_canny;
 
 
 #ifdef USE_ALIGNED_MALLOC

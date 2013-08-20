@@ -148,6 +148,8 @@ static setter_t get_setter(const char *filter_name)
         { "Deflate",       { set_xxflate,        ID_DEFLATE        } },
         { "Binarize",      { set_binarize,       ID_BINARIZE       } },
         { "Binarize2",     { set_binarize2,      ID_BINARIZE2      } },
+        { "Canny",         { set_canny,          ID_CANNY          } },
+        { "GBlur",         { set_canny,          ID_GAUSSIAN_BLUR  } },
         { filter_name,     { NULL,               ID_NONE           } }
     };
 
@@ -281,4 +283,9 @@ VapourSynthPluginInit(VSConfigPlugin conf, VSRegisterFunction reg,
         create_filter_common, (void *)"Binarize2", plugin);
     reg("Hysteresis", "base:clip;alt:clip;planes:int[]:opt",
         create_hysteresis, NULL, plugin);
+    reg("Canny",
+        "clip:clip;sigma:float:opt;th:float:opt;tl:float:opt;planes:int[]:opt",
+        create_filter_common, (void *)"Canny", plugin);
+    reg("GBlur", "clip:clip;sigma:float:opt;planes:int[]:opt",
+        create_filter_common, (void *)"GBlur", plugin);
 }
