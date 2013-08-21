@@ -8,7 +8,7 @@ This plugin modifies all pixel values with various algorithms.
 
 All functions support 8/9/10/16bit planar formats.
 
-Currently, GenericFilters has fifteen functions as follows.
+Currently, GenericFilters has nineteen functions as follows.
 
 Minimum:
 --------

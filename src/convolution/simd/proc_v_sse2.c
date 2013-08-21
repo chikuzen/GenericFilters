@@ -34,9 +34,8 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     int border = num / 2;
 
     for (int i = 0; i <= border; i++) {
-        p[i] = srcp;
+        p[i] = srcp + (border - i) * stride;
     }
-
     for (int i = border + 1; i < num; i++) {
         p[i] = p[i - 1] + stride;
     }
@@ -94,8 +93,7 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
         for (int i = 0; i < num - 1; i++) {
             p[i] = p[i + 1];
         }
-        p[num - 1] = (y < height - border - 1) ? p[num - 1] + stride :
-                                                 p[num - 1] - stride;
+        p[num - 1] += stride * (y < height - border - 1 ? 1 : -1);
     }
 }
 
@@ -112,7 +110,7 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     int num = ch->length;
     int border = num / 2;
     for (int i = 0; i <= border; i++) {
-        p[i] = srcp;
+        p[i] = srcp + (border - i) * stride;
     }
     for (int i = border + 1; i < num; i++) {
         p[i] = p[i - 1] + stride;
@@ -181,8 +179,9 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     const uint16_t *p[17] = {NULL};
     int num = ch->length;
     int border = num / 2;
+
     for (int i = 0; i <= border; i++) {
-        p[i] = srcp;
+        p[i] = srcp + (border - i) * stride;
     }
     for (int i = border + 1; i < num; i++) {
         p[i] = p[i - 1] + stride;
@@ -198,7 +197,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             ar_matrix[i][j] = (float)ch->m[i];
         }
     }
-    
+
     for (int y = 0; y < height; y++) {
 
         for (int x = 0; x < width; x += 8) {
@@ -239,8 +238,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
         for (int i = 0; i < num - 1; i++) {
             p[i] = p[i + 1];
         }
-        p[num - 1] = (y < height - border - 1) ? p[num - 1] + stride :
-                                                 p[num - 1] - stride;
+        p[num - 1] += stride * (y < height - border - 1 ? 1 : -1);
     }
 }
 

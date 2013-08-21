@@ -3,17 +3,17 @@ include config.mak
 vpath %.c $(SRCDIR)
 vpath %.h $(SRCDIR)
 
-SRCS = convolution/convolution.c       convolution/proc_3x3_sse2.c \
-       convolution/proc_5x5_sse2.c     convolution/proc_h_sse2.c \
-       convolution/proc_v_sse2.c       convolution/convolution_hv.c \
-       convolution/proc_hv_sse2.c      convolution/xxflate.c \
-       convolution/inflate_sse2.c      convolution/deflate_sse2.c \
-       convolution/edge.c              convolution/sobel_sse2.c \
-       convolution/prewitt_sse2.c      convolution/tedge_sse2.c \
-       convolution/canny.c             convolution/gaussian_blur_sse2.c \
-       convolution/float_to_dst_sse2.c convolution/edge_detect_canny_sse2.c \
-       neighbors/maximum_sse2.c        neighbors/median_sse2.c \
-       neighbors/minimum_sse2.c        neighbors/neighbors.c \
+SRCS = convolution/convolution.c       convolution/proc_3x3.c \
+       convolution/proc_5x5.c          convolution/proc_h.c \
+       convolution/proc_v.c            convolution/convolution_hv.c \
+       convolution/proc_hv.c           convolution/xxflate.c \
+       convolution/inflate.c           convolution/deflate.c \
+       convolution/edge.c              convolution/sobel.c \
+       convolution/prewitt.c           convolution/tedge.c \
+       convolution/canny.c             convolution/gaussian_blur.c \
+       convolution/float_to_dst.c      convolution/edge_detect_canny.c \
+       neighbors/maximum.c             neighbors/median.c \
+       neighbors/minimum.c             neighbors/neighbors.c \
        neighbors/binarize2.c \
        alone/invert.c                  alone/limiter.c \
        alone/levels.c                  alone/binarize.c \
@@ -52,7 +52,7 @@ endif
 
 .depend: config.mak
 	@$(RM) .depend
-	@$(foreach SRC, $(SRCS:%=$(SRCDIR)/%), $(CC) $(SRC) $(CFLAGS) -msse2 -MT $(SRC:$(SRCDIR)/%.c=%.o) -MM >> .depend;)
+	@$(foreach SRC, $(SRCS:%=$(SRCDIR)/%), $(CC) $(SRC) $(CFLAGS) $(DEPFLAG) -MT $(SRC:$(SRCDIR)/%.c=%.o) -MM >> .depend;)
 
 config.mak:
 	./configure

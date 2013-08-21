@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "common.h"
-#include "specific/hysteresis.h"
+#include "hysteresis.h"
 
 
 static const VSFrameRef * VS_CC
@@ -202,9 +202,9 @@ create_filter_common(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
 }
 
 
-void VS_CC
+static void VS_CC
 create_hysteresis(const VSMap *in, VSMap *out, void *user_data, VSCore *core,
-                 const VSAPI *vsapi)
+                  const VSAPI *vsapi)
 {
     hysteresis_t *hh = (hysteresis_t *)calloc(sizeof(hysteresis_t), 1);
     if (!hh) {

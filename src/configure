@@ -14,6 +14,7 @@ options:
   --target-os=OS           build programs to run on OS [auto]
   --cross-prefix=PREFIX    use PREFIX for compilation tools [none]
   --sysroot=DIR            specify toolchain's directory [none]
+  --disable-simd           disable all x86 SIMD code.
   --enable-debug           compile with debug symbols and never strip
 
   --extra-cflags=XCFLAGS   add XCFLAGS to CFLAGS
@@ -66,10 +67,12 @@ SYSROOT=""
 CC="gcc"
 LD="gcc"
 STRIP="strip"
+SIMD="-DUSE_X86_INTRINSICS"
 DEBUG=""
 LIBNAME=""
-CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/alone"
+CFLAGS="-Wshadow -Wall -std=gnu99 -I. -I$SRCDIR -I$SRCDIR/common -I$SRCDIR/convolution -I$SRCDIR/neighbors -I$SRCDIR/alone -I$SRCDIR/specific"
 LDFLAGS="-shared"
+DEPFLAG="-msse2"
 
 echo all command lines: > config.log
 echo "$*" >> config.log
@@ -90,6 +93,9 @@ for opt; do
         --sysroot=*)
             CFLAGS="$CFLAGS --sysroot=$optarg"
             LDFLAGS="$LDFLAGS --sysroot=$optarg"
+            ;;
+        --disable-simd)
+            SIMD=""
             ;;
         --enable-debug)
             DEBUG="enabled"
@@ -145,8 +151,12 @@ esac
 
 log_echo "CFLAGS/LDFLAGS checking..."
 
-CFLAGS="$CFLAGS $XCFLAGS"
+CFLAGS="$CFLAGS $SIMD $XCFLAGS"
 LDFLAGS="$LDFLAGS $XLDFLAGS"
+
+if test -z "$SIMD"; then
+    DEPFLAG=""
+fi
 
 if test -n "$DEBUG"; then
     CFLAGS="$CFLAGS -g3 -O0"
@@ -174,6 +184,7 @@ STRIP = $STRIP
 LIBNAME = $LIBNAME
 CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
+DEPFLAG = $DEPFLAG
 libdir = $libdir
 EOF
 

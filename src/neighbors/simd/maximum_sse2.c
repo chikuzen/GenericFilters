@@ -41,7 +41,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint8_t *orig = p0, *end = p2;
     uint8_t threshold = th > 255 ? 255 : (uint8_t)th;
 
-    line_copy8(p0, srcp, width, 1);
+    line_copy8(p0, srcp + stride, width, 1);
     line_copy8(p1, srcp, width, 1);
     srcp += stride;
 

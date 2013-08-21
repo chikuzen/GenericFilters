@@ -1,5 +1,5 @@
 /*
-  proc_3x3.c: Copyright (C) 2012-2013  Oka Motofumi
+  proc_3x3_sse2.c: Copyright (C) 2012-2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 

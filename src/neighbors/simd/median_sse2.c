@@ -46,11 +46,11 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy8(p0, srcp, width, 1);
     line_copy8(p1, srcp, width, 1);
-    srcp += stride;
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
-        
+
         for (int x = 0; x < width; x += 16) {
             __m128i x0 = _mm_load_si128((__m128i *)(p0 + x));
             __m128i x1 = _mm_loadu_si128((__m128i *)(p0 + x + 1));
@@ -82,7 +82,6 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             x0 = _mm_min_epu8(x0, x2);
             _mm_store_si128((__m128i *)(dstp + x), x0);
         }
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -92,20 +91,10 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 #undef LOWHIGHu8
 
 #define LOWHIGHu16(X, Y) {\
-    __m128i tmp0 = _mm_subs_epu16(X, Y); \
-    __m128i tmp1 = _mm_adds_epu16(tmp0, Y); \
-    X = _mm_subs_epu16(X, tmp0); \
-    Y = tmp1; \
-}
-
-#define HIGHu16(X, Y, Z) {\
-    __m128i tmp = _mm_subs_epu16(Y, Z); \
-    X = _mm_adds_epu16(tmp, Z); \
-}
-
-#define LOWu16(X, Y, Z) {\
-    __m128i tmp = _mm_subs_epu16(Y, Z); \
-    X = _mm_subs_epu16(Y, tmp); \
+    __m128i min = MM_MIN_EPU16(X, Y); \
+    __m128i max = MM_MAX_EPU16(X, Y); \
+    X = min; \
+    Y = max; \
 }
 
 
@@ -113,11 +102,11 @@ static void GF_FUNC_ALIGN VS_CC
 proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
                 uint8_t *d, const uint8_t *s, int th, int *enable)
 {
-    stride >>= 1;
+    stride /= 2;
     uint16_t *dstp = (uint16_t *)d;
     const uint16_t *srcp = (uint16_t *)s;
 
-    bstride >>= 1;
+    bstride /= 2;
     uint16_t *p0 = (uint16_t *)buff + 8;
     uint16_t *p1 = p0 + bstride;
     uint16_t *p2 = p1 + bstride;
@@ -125,9 +114,9 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy16(p0, srcp, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
@@ -143,25 +132,24 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             __m128i x5 = _mm_loadu_si128((__m128i *)(p1 + x - 1));
             LOWHIGHu16(x3, x5);
             LOWHIGHu16(x4, x5);
-            HIGHu16(x0, x0, x3);
+            x0 = MM_MAX_EPU16(x0, x3);
             x3 = _mm_load_si128((__m128i *)(p2 + x));
             __m128i x6 = _mm_loadu_si128((__m128i *)(p2 + x + 1));
             LOWHIGHu16(x3, x6);
             __m128i x7 = _mm_loadu_si128((__m128i *)(p2 + x - 1));
             LOWHIGHu16(x3, x7);
             LOWHIGHu16(x6, x7);
-            HIGHu16(x0, x0, x3);
+            x0 = MM_MAX_EPU16(x0, x3);
             LOWHIGHu16(x4, x6);
-            HIGHu16(x1, x1, x4);
-            LOWu16(x5, x5, x7);
-            LOWu16(x2, x2, x5);
-            LOWu16(x1, x1, x6);
+            x1 = MM_MAX_EPU16(x1, x4);
+            x5 = MM_MIN_EPU16(x5, x7);
+            x2 = MM_MIN_EPU16(x2, x5);
+            x1 = MM_MIN_EPU16(x1, x6);
             LOWHIGHu16(x1, x2);
-            HIGHu16(x0, x0, x1);
-            LOWu16(x0, x0, x2);
-            _mm_storeu_si128((__m128i *)(dstp + x), x0);
+            x0 = MM_MAX_EPU16(x0, x1);
+            x0 = MM_MIN_EPU16(x0, x2);
+            _mm_store_si128((__m128i *)(dstp + x), x0);
         }
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -169,8 +157,6 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     }
 }
 #undef LOWHIGHu16
-#undef HIGHu16
-#undef LOWu16
 
 
 const proc_neighbors median[] = {

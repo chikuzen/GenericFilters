@@ -26,12 +26,6 @@
 #include "neighbors.h"
 #include "sse2.h"
 
-#define COORDINATES {\
-    p0 + x - 1, p0 + x, p0 + x + 1,\
-    p1 + x - 1,         p1 + x + 1,\
-    p2 + x - 1, p2 + x, p2 + x + 1\
-}
-
 
 static void GF_FUNC_ALIGN VS_CC
 proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
@@ -45,22 +39,22 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy8(p0, srcp, width, 1);
     line_copy8(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i xth = _mm_set1_epi8((int8_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
-
+        uint8_t *coordinates[] = {p0 - 1, p0, p0 + 1,
+                                  p1 - 1,     p1 + 1,
+                                  p2 - 1, p2, p2 + 1};
         for (int x = 0; x < width; x += 16) {
-            uint8_t *coordinates[] = COORDINATES;
-
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i min = src;
 
             for (int i = 0; i < 8; i++) {
                 if (enable[i]) {
-                    __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
+                    __m128i target = _mm_loadu_si128((__m128i *)(coordinates[i] + x));
                     min = _mm_min_epu8(target, min);
                 }
             }
@@ -69,7 +63,6 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             min = _mm_max_epu8(min, limit);
             _mm_store_si128((__m128i *)(dstp + x), min);
         }
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -95,22 +88,22 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy16(p0, srcp, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i xth = _mm_set1_epi16((int16_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
-
+        uint16_t *coordinates[] = {p0 - 1, p0, p0 + 1,
+                                   p1 - 1,     p1 + 1,
+                                   p2 - 1, p2, p2 + 1};
         for (int x = 0; x < width; x += 8) {
-            uint16_t *coordinates[] = COORDINATES;
-
             __m128i src = _mm_load_si128((__m128i *)(p1 + x));
             __m128i min = src;
 
             for (int i = 0; i < 8; i++) {
                 if (enable[i]) {
-                    __m128i target = _mm_loadu_si128((__m128i *)coordinates[i]);
+                    __m128i target = _mm_loadu_si128((__m128i *)(coordinates[i] + x));
                     min = MM_MIN_EPU16(min, target);
                 }
             }
@@ -119,7 +112,6 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             min = MM_MAX_EPU16(min, limit);
             _mm_store_si128((__m128i *)(dstp + x), min);
         }
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;

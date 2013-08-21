@@ -33,7 +33,7 @@
 #define snprintf _snprintf
 #endif
 
-#define GENERIC_FILTERS_VERSION "0.7.0"
+#define GENERIC_FILTERS_VERSION "1.0.0"
 
 
 typedef struct generic_handler generic_handler_t;
@@ -92,6 +92,7 @@ extern const set_filter_data_func set_canny;
 
 
 #ifdef USE_ALIGNED_MALLOC
+#ifdef USE_X86_INTRINSICS
 #ifdef _WIN32
 #include <malloc.h>
 #else
@@ -101,12 +102,15 @@ static inline void *_aligned_malloc(size_t size, size_t alignment)
     int ret = posix_memalign(&p, alignment, size);
     return (ret == 0) ? p : 0;
 }
-
 static inline void _aligned_free(void *p)
 {
     free(p);
 }
 #endif // _WIN32
+#else
+#define _aligned_malloc(X, Y) malloc(X)
+#define _aligned_free(X) free(X)
+#endif // USE_X86_INTRINSICS
 #endif // USE_ALIGNED_MALLOC
 
 #define RET_IF_ERROR(cond, ...) { \

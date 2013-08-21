@@ -59,7 +59,7 @@ convert_to_float_16bit(int radius, float *kernel, const uint8_t *s,
                        float *buff, float *dstp, int width, int height,
                        int src_stride, int dst_stride)
 {
-    const uint16_t *srcp = (uint16_t *)srcp;
+    const uint16_t *srcp = (uint16_t *)s;
     src_stride /= 2;
     __m128i zero = _mm_setzero_si128();
     

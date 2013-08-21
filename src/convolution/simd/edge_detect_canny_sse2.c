@@ -1,5 +1,5 @@
 /*
-  edge_detect_canny_sse2.h: Copyright (C) 2013  Oka Motofumi
+  edge_detect_canny_sse2.c: Copyright (C) 2013  Oka Motofumi
 
   Author: Oka Motofumi (chikuzen.mo at gmail dot com)
 
@@ -21,8 +21,6 @@
 */
 
 
-#include <float.h>
-#include <math.h>
 #include "sse2.h"
 #include "canny.h"
 
@@ -106,95 +104,3 @@ proc_edge_detect(float *buff, int bstride, const float *srcp, float *dstp,
     }
     memset(dstp, 0, stride * sizeof(float));
 }
-
-
-static void VS_CC
-proc_non_max_suppress(const float *srcp, float *dstp, const uint8_t *direction,
-                      int width, int height, int stride)
-{
-    memset(dstp, 0, stride * sizeof(float));
-    srcp += stride;
-    dstp += stride;
-    memcpy(dstp, srcp, stride * sizeof(float) * (height - 2));
-
-    int pos[8] = {1, 1 - stride, 0, stride, 0, 0, 0, 1 + stride};
-
-    for (int y = 1; y < height - 1; y++) {
-        direction += stride;
-        dstp[0] = 0.0f;
-        
-        for (int x = 1; x < width - 1; x++) {
-            int p = pos[(direction[x] + 1) / 2 - 1];
-            if (srcp[x] < srcp[x + p] || srcp[x] < srcp[x - p]) {
-                dstp[x] = 0.0f;
-            }
-        }
-        dstp[width - 1] = 0.0f;
-        srcp += stride;
-        dstp += stride;
-    }
-    memset(dstp, 0, stride * sizeof(float));
-}
-
-
-static void reset(stack_t *s, int size)
-{
-    s->index = -1;
-    memset(s->map, 0, size);
-}
-
-
-static void push(stack_t *s, int x, int y)
-{
-    s->pos[++s->index] = (int32_t)((x << 16) | y);
-}
-
-
-static int32_t pop(stack_t *s)
-{
-    return s->pos[s->index--];
-}
-
-
-static void VS_CC
-proc_hysteresis(float *edge, int width, int height, int stride, float tmax,
-                float tmin, stack_t *stack)
-{
-    reset(stack, width * height);
-
-    for (int y = 1; y < height - 1; y++) {
-        for (int x = 1; x < width - 1; x++) {
-            if (edge[x + y * stride] < tmax || stack->map[x + y * width]) {
-                continue;
-            }
-            edge[x + y * stride] = FLT_MAX;
-            stack->map[x + y * width] = 0xFF;
-            push(stack, x, y);
-            
-            while (stack->index > -1) {
-                int32_t posx = pop(stack);
-                int32_t posy = posx & 0xFFFF;
-                posx >>= 16;
-                int32_t xmin = posx > 1 ? posx - 1 : 1;
-                int32_t xmax = posx < width - 2 ? posx + 1 : posx;
-                int32_t ymin = posy > 1 ? posy - 1 : 1;
-                int32_t ymax = posy < height - 2 ? posy + 1 : posy;
-                for (int yy = ymin; yy <= ymax; yy++) {
-                    for (int xx = xmin; xx <= xmax; xx++) {
-                        if (edge[xx + yy * stride] > tmin
-                            && !stack->map[xx + yy * width]) {
-                            edge[xx + yy * stride] = FLT_MAX;
-                            stack->map[xx + yy * width] = 0xFF;
-                            push(stack, xx, yy);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-const proc_edetect edge_detect = proc_edge_detect;
-const proc_nms  non_max_suppress = proc_non_max_suppress;
-const proc_hyst hysteresis = proc_hysteresis;

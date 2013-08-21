@@ -1,6 +1,12 @@
 #define USE_ALIGNED_MALLOC
 #include "common.h"
+#ifdef USE_X86_INTRINSICS
 #include "sse2.h"
+#else
+#include <stdlib.h>
+#include "no_simd.h"
+#endif
+
 
 typedef struct filter_data {
     void (VS_CC *function)(uint16_t *, int, int, int, int, uint8_t *, const uint8_t *);
@@ -14,10 +20,12 @@ sierra24a(uint16_t *buff_orig, int bstride, int width, int height, int stride,
     uint16_t *buff = buff_orig;
     bstride /= 2;
 
+#ifdef USE_X86_INTRINSICS
+    __m128i zero = _mm_setzero_si128();
+    
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x += 16) {
             __m128i load = _mm_load_si128((__m128i *)(srcp + x));
-            __m128i zero = _mm_setzero_si128();
             __m128i lo = _mm_unpacklo_epi8(load, zero);
             __m128i hi = _mm_unpackhi_epi8(load, zero);
             _mm_store_si128((__m128i *)(buff + x), lo);
@@ -26,6 +34,15 @@ sierra24a(uint16_t *buff_orig, int bstride, int width, int height, int stride,
         srcp += stride;
         buff += bstride;
     }
+#else
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            buff[x] = srcp[x];
+        }
+        srcp += stride;
+        buff += bstride;
+    }
+#endif
 
     buff = buff_orig;
     for (int y = 0; y < height; y += 2) {
@@ -44,10 +61,11 @@ sierra24a(uint16_t *buff_orig, int bstride, int width, int height, int stride,
             buff[x + bstride] += mod / 2;
             buff[x] = (buff[x] >= 255) * 255;
         }
-        buff += stride;
+        buff += bstride;
     }
 
     buff = buff_orig;
+#ifdef USE_X86_INTRINSICS
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x += 16) {
             __m128i lo = _mm_load_si128((__m128i *)(buff + x));
@@ -56,8 +74,17 @@ sierra24a(uint16_t *buff_orig, int bstride, int width, int height, int stride,
             _mm_store_si128((__m128i *)(dstp + x), result);
         }
         dstp += stride;
-        buff += stride;
+        buff += bstride;
     }
+#else
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            dstp[x] = (uint8_t)(buff[x]);
+        }
+        dstp += stride;
+        buff += bstride;
+    }
+#endif
 }
 
 

@@ -52,12 +52,10 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy8(p2, srcp, width, 1);
-
+        uint8_t *coordinates[] = COORDINATES;
         for (int x = 0; x < width; x += 16) {
             __m128i sumlo = zero;
             __m128i sumhi = zero;
-
-            uint8_t *coordinates[] = COORDINATES;
 
             for (int i = 0; i < 8; i++) {
                 __m128i target = _mm_loadu_si128((__m128i *)(coordinates[i] + x));
@@ -112,12 +110,10 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
-        
+        uint16_t *coordinates[] = COORDINATES;
+
         for (int x = 0; x < width; x += 8) {
             __m128i sum = zero;
-            
-            uint16_t *coordinates[] = COORDINATES;
-            
             for (int i = 0; i < 8; i++) {
                 __m128i xmm0 = _mm_loadu_si128((__m128i *)(coordinates[i] + x));
                 sum = _mm_adds_epu16(sum, xmm0);
@@ -167,12 +163,10 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     for (int y = 0; y < height; y++) {
         line_copy16(p2, srcp, width, 1);
-
+        uint16_t *coordinates[] = COORDINATES;
         for (int x = 0; x < width; x += 8) {
             __m128i sumlo = zero;
             __m128i sumhi = zero;
-
-            uint16_t *coordinates[] = COORDINATES;
 
             for (int i = 0; i < 8; i++) {
                 __m128i target = _mm_loadu_si128((__m128i *)(coordinates[i] + x));

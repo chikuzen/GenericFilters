@@ -294,7 +294,7 @@ get_frame(int n, int activation_reason, void **instance_data, void **frame_data,
 
 static void VS_CC
 initialize(VSMap *in, VSMap *out, void **instance_data, VSNode *node,
-                VSCore *core, const VSAPI *vsapi)
+           VSCore *core, const VSAPI *vsapi)
 {
     hysteresis_t *hh = (hysteresis_t *)*instance_data;
     vsapi->setVideoInfo(hh->vi, 1, node);
