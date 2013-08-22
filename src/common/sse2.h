@@ -31,6 +31,7 @@
 #ifdef _MSC_VER
 #define GF_ALIGN __declspec(align(16))
 #define GF_FUNC_ALIGN
+#define F_INLINE __forceinline
 #else
 #ifdef __MINGW32__
 #define GF_FUNC_ALIGN __attribute__((force_align_arg_pointer))
@@ -38,13 +39,14 @@
 #define GF_FUNC_ALIGN
 #endif // __MINGW32__
 #define GF_ALIGN __attribute__((aligned(16)))
+#define F_INLINE inline __attribute__((always_inline))
 #endif // _MSC_VER
 
 #define MM_MAX_EPU16(X, Y) (_mm_adds_epu16(Y, _mm_subs_epu16(X, Y)))
 #define MM_MIN_EPU16(X, Y) (_mm_subs_epu16(X, _mm_subs_epu16(X, Y)))
 
 
-static inline __m128i mm_cast_epi32(__m128i xmm0, __m128i xmm1)
+static F_INLINE __m128i mm_cast_epi32(__m128i xmm0, __m128i xmm1)
 {
     xmm0 = _mm_shufflelo_epi16(xmm0, _MM_SHUFFLE(3, 1, 2, 0));
     xmm0 = _mm_shufflehi_epi16(xmm0, _MM_SHUFFLE(3, 1, 2, 0));
@@ -55,7 +57,7 @@ static inline __m128i mm_cast_epi32(__m128i xmm0, __m128i xmm1)
 }
 
 
-static inline __m128i mm_max_epi32(__m128i xmm0, __m128i xmm1)
+static F_INLINE __m128i mm_max_epi32(__m128i xmm0, __m128i xmm1)
 {
     __m128i mask = _mm_cmpgt_epi32(xmm0, xmm1);
     return _mm_or_si128(_mm_and_si128(mask, xmm0),
@@ -63,7 +65,7 @@ static inline __m128i mm_max_epi32(__m128i xmm0, __m128i xmm1)
 }
 
 
-static inline __m128i mm_min_epi32(__m128i xmm0, __m128i xmm1)
+static F_INLINE __m128i mm_min_epi32(__m128i xmm0, __m128i xmm1)
 {
     __m128i mask = _mm_cmplt_epi32(xmm0, xmm1);
     return _mm_or_si128(_mm_and_si128(mask, xmm0),
@@ -71,7 +73,7 @@ static inline __m128i mm_min_epi32(__m128i xmm0, __m128i xmm1)
 }
 
 
-static inline __m128i mm_abs_epi16(__m128i xmm0)
+static F_INLINE __m128i mm_abs_epi16(__m128i xmm0)
 {
     __m128i all1 = _mm_cmpeq_epi32(xmm0, xmm0);
     __m128i mask = _mm_cmpgt_epi16(xmm0, _mm_setzero_si128());
@@ -82,7 +84,7 @@ static inline __m128i mm_abs_epi16(__m128i xmm0)
 }
 
 
-static inline __m128i mm_abs_epi32(__m128i xmm0)
+static F_INLINE __m128i mm_abs_epi32(__m128i xmm0)
 {
     __m128i all1 = _mm_cmpeq_epi32(xmm0, xmm0);
     __m128i mask = _mm_cmpgt_epi32(xmm0, _mm_setzero_si128());
@@ -93,21 +95,21 @@ static inline __m128i mm_abs_epi32(__m128i xmm0)
 }
 
 
-static inline __m128 mm_abs_ps(const __m128 xmm0)
+static F_INLINE __m128 mm_abs_ps(const __m128 xmm0)
 {
     const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
     return _mm_and_ps(xmm0, mask);
 }
 
 
-static inline __m128 mm_ivtsign_ps(const __m128 xmm0)
+static F_INLINE __m128 mm_ivtsign_ps(const __m128 xmm0)
 {
     const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
     return _mm_xor_ps(xmm0, mask);
 }
 
 
-static inline __m128 mm_rcp_hq_ps(const __m128 xmm0)
+static F_INLINE __m128 mm_rcp_hq_ps(const __m128 xmm0)
 {
     __m128 rcp = _mm_rcp_ps(xmm0);
     __m128 xmm1 =  _mm_mul_ps(_mm_mul_ps(xmm0, rcp), rcp);

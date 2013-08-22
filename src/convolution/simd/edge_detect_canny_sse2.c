@@ -25,7 +25,7 @@
 #include "canny.h"
 
 
-static inline __m128i calc_direction(const __m128 gx, const __m128 gy)
+static F_INLINE __m128i calc_direction(const __m128 gx, const __m128 gy)
 {
     __m128 t0225 = _mm_set1_ps((float)(sqrt(2.0) - 1.0)); // tan(pi/8)
     __m128 t0675 = _mm_set1_ps((float)(sqrt(2.0) + 1.0)); // tan(3*pi/8)
