@@ -34,9 +34,8 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     uint8_t *p2 = p1 + bstride;
     uint8_t *orig = p0, *end = p2;
 
-    line_copy8(p0, srcp, width, 1);
+    line_copy8(p0, srcp + stride, width, 1);
     line_copy8(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
@@ -48,8 +47,8 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     }
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
-
         uint8_t *array[] = {p0 - 1, p0, p0 + 1,
                             p1 - 1, p1, p1 + 1,
                             p2 - 1, p2, p2 + 1 };
@@ -90,8 +89,6 @@ proc_8bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
 
             _mm_store_si128((__m128i *)(dstp + x), sum[0]);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -114,9 +111,8 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width, 1);
+    line_copy16(p0, srcp + stride, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
     __m128 rdiv = _mm_set1_ps((float)ch->rdiv);
@@ -127,6 +123,7 @@ proc_9_10_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     }
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
         uint16_t *array[] = {p0 - 1, p0, p0 + 1,
                              p1 - 1, p1, p1 + 1,
@@ -182,9 +179,8 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width, 1);
+    line_copy16(p0, srcp + stride, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i zero = _mm_setzero_si128();
     __m128i max = _mm_set1_epi32(0xFFFF);
@@ -196,6 +192,7 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
     }
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
         uint16_t *array[] = {p0 - 1, p0, p0 + 1,
                              p1 - 1, p1, p1 + 1,
@@ -229,8 +226,6 @@ proc_16bit_sse2(convolution_t *ch, uint8_t *buff, int bstride, int width,
             out[0] = mm_cast_epi32(out[0], out[1]);
             _mm_store_si128((__m128i *)(dstp + x), out[0]);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;

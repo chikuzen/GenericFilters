@@ -41,9 +41,8 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint8_t *p2 = p1 + bstride;
     uint8_t *orig = p0, *end = p2;
 
-    line_copy8(p0, srcp, width, 1);
+    line_copy8(p0, srcp + stride, width, 1);
     line_copy8(p1, srcp, width, 1);
-    srcp += stride;
 
     uint8_t threshold = (uint8_t)th;
 
@@ -51,6 +50,7 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     __m128i xth = _mm_set1_epi8((int8_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
         uint8_t *coordinates[] = COORDINATES;
         for (int x = 0; x < width; x += 16) {
@@ -75,8 +75,6 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
             _mm_store_si128((__m128i *)(dstp + x), sumlo);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -99,9 +97,8 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width, 1);
+    line_copy16(p0, srcp + stride, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     uint16_t threshold = (uint16_t)th;
 
@@ -109,6 +106,7 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     __m128i xth  = _mm_set1_epi16((int16_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
         uint16_t *coordinates[] = COORDINATES;
 
@@ -129,8 +127,6 @@ proc_9_10_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
             _mm_store_si128((__m128i *)(dstp + x), sum);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -153,9 +149,8 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width, 1);
+    line_copy16(p0, srcp + stride, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     uint16_t threshold = (uint16_t)th;
 
@@ -163,8 +158,9 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
     __m128i xth  = _mm_set1_epi16((int16_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
-            uint16_t *coordinates[] = COORDINATES;
+        uint16_t *coordinates[] = COORDINATES;
         for (int x = 0; x < width; x += 8) {
             __m128i sumlo = zero;
             __m128i sumhi = zero;
@@ -188,8 +184,6 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
             _mm_store_si128((__m128i *)(dstp + x), sumlo);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
