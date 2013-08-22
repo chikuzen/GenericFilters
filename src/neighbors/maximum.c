@@ -41,7 +41,7 @@ proc_8bit(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy8(p1, srcp, width, 1);
     
     for (int y = 0; y < height; y++) {
-        srcp += stride;
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
         uint8_t *coordinates[] = {p0 - 1, p0, p0 + 1,
                                   p1 - 1,     p1 + 1,
@@ -84,7 +84,7 @@ proc_16bit(uint8_t *buff, int bstride, int width, int height, int stride,
     line_copy16(p1, srcp, width, 1);
     
     for (int y = 0; y < height; y++) {
-        srcp += stride;
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
         uint16_t *coordinates[] = {p0 - 1, p0, p0 + 1,
                                    p1 - 1,     p1 + 1,

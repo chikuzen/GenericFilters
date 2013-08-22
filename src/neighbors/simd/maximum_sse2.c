@@ -43,11 +43,11 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy8(p0, srcp + stride, width, 1);
     line_copy8(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i xth = _mm_set1_epi8((int8_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy8(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 16) {
@@ -67,7 +67,6 @@ proc_8bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             max = _mm_min_epu8(max, limit);
             _mm_store_si128((__m128i *)(dstp + x), max);
         }
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
@@ -93,11 +92,11 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
 
     line_copy16(p0, srcp, width, 1);
     line_copy16(p1, srcp, width, 1);
-    srcp += stride;
 
     __m128i xth = _mm_set1_epi16((int16_t)threshold);
 
     for (int y = 0; y < height; y++) {
+        srcp += stride * (y < height - 1 ? 1 : -1);
         line_copy16(p2, srcp, width, 1);
 
         for (int x = 0; x < width; x += 8) {
@@ -117,8 +116,6 @@ proc_16bit_sse2(uint8_t *buff, int bstride, int width, int height, int stride,
             max = MM_MIN_EPU16(max, limit);
             _mm_store_si128((__m128i *)(dstp + x), max);
         }
-
-        srcp += stride * (y < height - 2);
         dstp += stride;
         p0 = p1;
         p1 = p2;
