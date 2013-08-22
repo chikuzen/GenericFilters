@@ -52,7 +52,7 @@ proc_8bit(uint8_t *buff, int bstride, int width, int height, int stride,
     uint8_t *p2 = p1 + bstride;
     uint8_t *orig = p0, *end = p2;
 
-    line_copy8(p0, srcp, width, 1);
+    line_copy8(p0, srcp + stride, width, 1);
     line_copy8(p1, srcp, width, 1);
 
     int th_min = eh->min > 0xFF ? 0xFF : eh->min;
@@ -102,7 +102,7 @@ proc_16bit(uint8_t *buff, int bstride, int width, int height, int stride,
     uint16_t *p2 = p1 + bstride;
     uint16_t *orig = p0, *end = p2;
 
-    line_copy16(p0, srcp, width, 1);
+    line_copy16(p0, srcp + stride, width, 1);
     line_copy16(p1, srcp, width, 1);
 
     int th_min = min_int(eh->min, plane_max);
